@@ -1,2 +1,5 @@
-# agroruta-mx.github.io
-App de AgroRuta Móvil – mantenimiento agrícola a domicilio en Jalisco
+# AgroRuta Móvil
+
+App para clientes de AgroRuta Móvil: cotiza y pide mantenimiento a domicilio para tractores, cosechadoras, camionetas y motobombas en Jalisco.
+
+Publicada en https://agroruta-mx.github.io
