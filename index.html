@@ -11,9 +11,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="AgroRuta">
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px/1.4 system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>AgroRuta Móvil</title>
 </head>
 <body>
-<title>AgroRuta Móvil</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,600..800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
@@ -22,7 +22,7 @@
 :root{
   --bg:#F2F4EE; --surface:#FFFFFF; --surface-2:#E7EBE1; --fg:#1E2419; --muted:#5B6452;
   --line:#D3D9CB; --accent:#E3A21A; --accent-ink:#1E1A0E; --green:#2F6B3A; --green-soft:#DCEBDC;
-  --warn:#B4531A; --warn-soft:#F7E2D3; --info:#285E8A; --info-soft:#DCE8F3; --danger:#A23030;
+  --head:#2F6B3A; --on-green:#FFFFFF; --on-danger:#FFFFFF; --warn:#B4531A; --warn-soft:#F7E2D3; --info:#285E8A; --info-soft:#DCE8F3; --danger:#A23030;
   --f-display:"Archivo","Arial Narrow",system-ui,sans-serif;
   --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
   --r:14px;
@@ -30,19 +30,19 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#141812; --surface:#1D231A; --surface-2:#262E22; --fg:#EDF1E6; --muted:#A3AD97;
   --line:#344030; --accent:#F0B33A; --accent-ink:#1E1A0E; --green:#7FC48A; --green-soft:#21361F;
-  --warn:#F0A06A; --warn-soft:#3A2618; --info:#8EC0EA; --info-soft:#1B2C3B; --danger:#F08A8A; color-scheme:dark}}
+  --head:#234F2B; --on-green:#0F1F0E; --on-danger:#2A0E0E; --warn:#F0A06A; --warn-soft:#3A2618; --info:#8EC0EA; --info-soft:#1B2C3B; --danger:#F08A8A; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#141812; --surface:#1D231A; --surface-2:#262E22; --fg:#EDF1E6; --muted:#A3AD97;
   --line:#344030; --accent:#F0B33A; --accent-ink:#1E1A0E; --green:#7FC48A; --green-soft:#21361F;
-  --warn:#F0A06A; --warn-soft:#3A2618; --info:#8EC0EA; --info-soft:#1B2C3B; --danger:#F08A8A; color-scheme:dark}
+  --head:#234F2B; --on-green:#0F1F0E; --on-danger:#2A0E0E; --warn:#F0A06A; --warn-soft:#3A2618; --info:#8EC0EA; --info-soft:#1B2C3B; --danger:#F08A8A; color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{height:100%}
 body{background:var(--bg);color:var(--fg);font:17px/1.45 var(--f-body);-webkit-tap-highlight-color:transparent}
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--green)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--head)}
 .app{max-width:560px;margin:0 auto;min-height:100%;padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 .wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--green);color:#fff;padding-block:12px}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--head);color:#fff;padding-block:12px}
 body.team::before{background:var(--fg)}
 .team header.top{background:var(--fg);color:var(--bg)}
 .tag{font:700 13px/1 var(--f-body);letter-spacing:.06em;text-transform:uppercase;background:var(--accent);color:var(--accent-ink);padding:5px 8px;border-radius:6px}
@@ -76,7 +76,7 @@ section[hidden]{display:none!important}
 .btn{appearance:none;border:0;border-radius:12px;min-height:54px;padding:12px 18px;font:700 18px/1.1 var(--f-body);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
 .btn:focus-visible,.tile:focus-visible,.chip:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--info);outline-offset:2px}
 .btn.primary{background:var(--accent);color:var(--accent-ink)}
-.btn.green{background:var(--green);color:#fff}
+.btn.green{background:var(--green);color:var(--on-green)}
 .btn.ghost{background:var(--surface-2);color:var(--fg)}
 .btn.block{width:100%}
 .btn:disabled{opacity:.45;cursor:not-allowed}
@@ -332,7 +332,8 @@ const SERVICES=[
  {id:'llantas',n:'Llantas y presión',d:'Revisión, calibración y lastre',p:300,m:['tractor','cosechadora','camioneta']},
  {id:'paquete',n:'Paquete preventivo completo',d:'',p:1900,hide:true}
 ];
-const allowed=(id,m)=>{const s=svc(id);return!!s&&!s.hide&&(!m||!s.m||s.m.includes(m))};
+const allowed=(id,m,d)=>{const s=svc(id);if(!s||s.hide||(m&&s.m&&!s.m.includes(m)))return false;
+  if(d&&SMALL.includes(m)){const bk=brandKey(d);if(bk==='honda'&&id==='inyectores')return false;if(bk==='hatz'&&id==='bujia')return false}return true};
 let OIL_L=110, HYD_L=65, LABOR=500, MARGEN=0.25, COSTO_KM=5.7, MANEJO_H=250, VEL=60;
 const HP=[
  {id:'c',n:'Compacto',r:'menos de 45 HP',ex:'Kubota serie L/KL, JD 3000',oil:6,hyd:28,f:{aceite:250,combustible:400,aire:450,hid_filtro:450},k:0.8},
@@ -391,8 +392,9 @@ const brandOf=d=>BRANDS[brandKey(d)];
 const hasHours=m=>brandsFor(m).length>0;
 const intervalsOf=d=>Object.keys(brandOf(d).iv).map(Number).sort((a,b)=>a-b);
 const SMALL=['bomba','generador','aspersora'];
+const afinDesc=d=>{const t=brandOf(d).afin||'Paquete del motor';return['bomba','aspersora'].includes(d.machine)?t:t.replace(/ y revisión de la bomba/,'').replace(/, ([^,]+)$/,' y $1')};
 const HOUR_MANAGED=['afinacion','aceite','combustible','revision','aire','hid_filtro','hid_aceite','engrase','enfriamiento','bujia','valvulas','bomba_rev'];
-const intervalSvcs=(i,d=draft)=>[...(brandOf(d).iv[i]||[]),...BASE].filter(id=>allowed(id,d.machine));
+const intervalSvcs=(i,d=draft)=>[...(brandOf(d).iv[i]||[]),...BASE].filter(id=>allowed(id,d.machine,d));
 function intervalFor(h,d=draft){h=Number(h)||0;const iv=intervalsOf(d),max=iv[iv.length-1];if(h<=0)return iv[0];const x=h>max?((h-1)%max)+1:h;const tol=max<=500?5:50;return iv.find(i=>i>=x-tol)||max}
 const ZONES=[{n:'Zona metropolitana',km:30},{n:'Hasta 40 km',km:80},{n:'40 a 80 km',km:160},{n:'80 a 150 km',km:300},{n:'Más de 150 km',km:400}];
 function recalcZones(){ZONES.forEach(z=>z.fee=r10(z.km*COSTO_KM+z.km/VEL*MANEJO_H))}
@@ -468,7 +470,7 @@ function quoteText(d,folio){
   const q=quote(d),m=mach(d.machine);
   let t=`*AgroRuta Móvil – ${folio?'Pedido '+folio:'Cotización'}*\n`;
   if(m)t+=`Máquina: ${m.n}${sizeOf(d)?' '+sizeOf(d).n.toLowerCase()+' ('+sizeOf(d).r+')':''}${d.model?' ('+d.model+')':''}\n`;
-  if(d.interval)t+=`Servicio de ${d.interval} horas (${brandOf(d).n})${d.hours?' (horómetro: '+d.hours+' h)':''}\n`;
+  if(d.interval)t+=`Servicio de ${d.interval} horas · ${brandOf(d).n}${d.hours?' · horómetro: '+d.hours+' h':''}\n`;
   q.lines.forEach(l=>t+=`• ${l.n}: ${l.p?money(l.p):'Gratis'}\n`);
   if(q.junto)t+=`• Traslado: sin costo (va junto con otro servicio)\n`;else if(q.zone)t+=`• Traslado (${d.muni}, ${q.zone.n}): ${money(q.traslado)}\n`;
   if(q.urg)t+=`• Servicio urgente mismo día: ${money(q.urg)}\n`;
@@ -495,7 +497,7 @@ function hoursHTML(){
 function applyInterval(i){draft.interval=i;draft.services=[...draft.services.filter(x=>!HOUR_MANAGED.includes(x)&&x!=='paquete'),...intervalSvcs(i)];saveDraft()}
 function servicesHTML(){
   const k=(mach(draft.machine)||{k:1}).k;
-  return hoursHTML()+`<div class="stack" style="gap:8px">${SERVICES.filter(s=>allowed(s.id,draft.machine)).map(s=>`<label class="svc"><input type="checkbox" data-s="${s.id}" ${draft.services.includes(s.id)?'checked':''}><span class="t"><b>${esc(s.n)}</b><small>${esc(s.id==='afinacion'?(brandOf(draft).afin||s.d)+'. Ya incluye inspección.':s.d)}</small></span><span class="p">${s.p?money(price(s.id)):'Gratis'}</span></label>`).join('')}</div>`
+  return hoursHTML()+`<div class="stack" style="gap:8px">${SERVICES.filter(s=>allowed(s.id,draft.machine,draft)).map(s=>`<label class="svc"><input type="checkbox" data-s="${s.id}" ${draft.services.includes(s.id)?'checked':''}><span class="t"><b>${esc(s.n)}</b><small>${esc(s.id==='afinacion'?afinDesc(draft)+'. Ya incluye inspección.':s.d)}</small></span><span class="p">${s.p?money(price(s.id)):'Gratis'}</span></label>`).join('')}</div>`
 }
 function placeHTML(withUrgent=true){
   return`<label class="f">Municipio<select data-f="muni"><option value="">Elige el municipio…</option>${MUNIS.map(([n])=>`<option ${draft.muni===n?'selected':''}>${esc(n)}</option>`).join('')}</select></label>
@@ -528,7 +530,7 @@ function bindPick(root,after){
     saveDraft();after();
   });
   root.querySelectorAll('[data-int]').forEach(b=>b.onclick=()=>{applyInterval(Number(b.dataset.int));after()});
-  const hb=root.querySelector('#h-brand');if(hb)hb.onchange=()=>{draft.brand=hb.value;draft.services=draft.services.filter(x=>!HOUR_MANAGED.includes(x));if(draft.interval){const h=draft.hours;draft.interval=null;if(h)applyInterval(intervalFor(h));}saveDraft();after()};
+  const hb=root.querySelector('#h-brand');if(hb)hb.onchange=()=>{draft.brand=hb.value;draft.services=draft.services.filter(x=>!HOUR_MANAGED.includes(x)&&allowed(x,draft.machine,draft));if(draft.interval){const h=draft.hours;draft.interval=null;if(h)applyInterval(intervalFor(h));}saveDraft();after()};
   const hg=root.querySelector('#h-go');if(hg)hg.onclick=()=>{const h=root.querySelector('#h-in').value;if(!h){toast('Escribe las horas del horómetro');return}draft.hours=h;applyInterval(intervalFor(h));toast('Te toca el servicio de '+draft.interval.toLocaleString('es-MX')+' h');after()};
   root.querySelectorAll('[data-f]').forEach(i=>{
     const ev=(i.type==='checkbox'||i.tagName==='SELECT')?'change':'input';
@@ -838,7 +840,7 @@ function openOrder(id){if(!TEAM){const o=orders.find(x=>x.id===id);if(o)renderCl
 function renderOrder(){
   const o=orders.find(x=>x.id===openId);if(!o){closeSheet();return}
   const m=mach(o.machine),k=m?m.k:1,done=o.done||[];
-  const items=(o.services||[]).flatMap(id=>{const s=svc(id);return s&&s.pack?s.pack.map(p=>({id:p,n:svc(p).n})):[{id,n:s?s.n:id}]});
+  const items=(o.services||[]).flatMap(id=>{const s=svc(id);if(id==='afinacion'){const inc=(brandOf(o).inc||[]).filter(x=>allowed(x,o.machine,o)&&x!=='revision');return inc.map(x=>({id:'af_'+x,n:'Afinación: '+svc(x).n}))}return s&&s.pack?s.pack.map(p=>({id:p,n:svc(p).n})):[{id,n:s?s.n:id}]});
   const nx=NEXT[o.estado];
   const maps='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent((o.place||'')+' '+o.muni+', Jalisco');
   openSheet(`<div class="stack">
@@ -893,11 +895,11 @@ function renderOrder(){
   ['x-c','x-h'].forEach(i=>{const e=$('#'+i);if(e)e.oninput=()=>{$('#x-p').textContent='Precio al cliente: '+money(xp().p)}});
   const xa=$('#x-add');if(xa)xa.onclick=async()=>{const n=$('#x-n').value.trim(),{c,p}=xp();if(!n||!p){toast('Escribe qué fue y su costo');return}
     const cur=orders.find(x=>x.id===o.id)||o;if(await patchOrder(o.id,{extras:[...(cur.extras||[]),{n,p,c}],total:(cur.total||0)+p,costo:costoOf(cur)+c}))toast('Cargo agregado: '+money(p));renderOrderSoon()};
-  const del=$('#o-del');if(del)del.onclick=()=>{del.outerHTML=`<div class="card stack"><b>¿Borrar ${esc(o.id)}? No se puede deshacer.</b><div class="flow"><button class="btn ghost sm" type="button" onclick="renderOrder()">No</button><button class="btn sm" style="background:var(--danger);color:#fff" type="button" id="o-del2">Sí, borrar</button></div></div>`;$('#o-del2').onclick=async()=>{if(await deleteOrder(o.id)){toast('Orden borrada');closeSheet()}}};
+  const del=$('#o-del');if(del)del.onclick=()=>{del.outerHTML=`<div class="card stack"><b>¿Borrar ${esc(o.id)}? No se puede deshacer.</b><div class="flow"><button class="btn ghost sm" type="button" onclick="renderOrder()">No</button><button class="btn sm" style="background:var(--danger);color:var(--on-danger)" type="button" id="o-del2">Sí, borrar</button></div></div>`;$('#o-del2').onclick=async()=>{if(await deleteOrder(o.id)){toast('Orden borrada');closeSheet()}}};
   $('#o-tel').onclick=()=>copyText(o.phone);
   $('#o-copy').onclick=()=>copyText(quoteText(o,o.id)+`\nEstado: ${stName(o.estado)}`+(o.techNotes?`\nNotas: ${o.techNotes}`:''));
   $('#o-save').onclick=async()=>{if(await patchOrder(o.id,{tecnico:$('#o-tech').value.trim(),techNotes:$('#o-notes').value.trim()}))toast('Notas guardadas')};
-  const cb=$('#o-cancel');if(cb)cb.onclick=()=>{cb.outerHTML=`<div class="card stack"><b>¿Cancelar la orden ${esc(o.id)}?</b><div class="flow"><button class="btn ghost sm" type="button" onclick="renderOrder()">No</button><button class="btn sm" style="background:var(--danger);color:#fff" type="button" id="o-cancel2">Sí, cancelar</button></div></div>`;$('#o-cancel2').onclick=async()=>{if(await patchOrder(o.id,{estado:'cancelada'}))toast('Orden cancelada');renderOrderSoon()}};
+  const cb=$('#o-cancel');if(cb)cb.onclick=()=>{cb.outerHTML=`<div class="card stack"><b>¿Cancelar la orden ${esc(o.id)}?</b><div class="flow"><button class="btn ghost sm" type="button" onclick="renderOrder()">No</button><button class="btn sm" style="background:var(--danger);color:var(--on-danger)" type="button" id="o-cancel2">Sí, cancelar</button></div></div>`;$('#o-cancel2').onclick=async()=>{if(await patchOrder(o.id,{estado:'cancelada'}))toast('Orden cancelada');renderOrderSoon()}};
   $('#sheet-panel').querySelectorAll('[data-done]').forEach(c=>c.onchange=async()=>{
     const cur=new Set((orders.find(x=>x.id===o.id)||o).done||[]);c.checked?cur.add(c.dataset.done):cur.delete(c.dataset.done);
     await patchOrder(o.id,{done:[...cur]});
@@ -955,7 +957,11 @@ function renderHomeNext(){if(!$('#home-next'))return;
 let maquinas=[];try{maquinas=JSON.parse(localStorage.getItem('ar_maquinas')||'[]')}catch(e){}
 function saveMaq(){try{localStorage.setItem('ar_maquinas',JSON.stringify(maquinas))}catch(e){}}
 let mqForm={machine:'tractor',hp:'m',brand:'jd',model:'',hours:'',week:''};
-function nextDue(m){const iv=intervalsOf(m),max=iv[iv.length-1],h=Number(m.hours)||0,cyc=Math.floor(h/max)*max,x=h-cyc,i=iv.find(v=>v>x);return i===undefined?{at:cyc+max+iv[0],iv:iv[0]}:{at:cyc+i,iv:i}}
+const FIRST_ONLY={jd:[100],mf:[100],kubota:[50],cjd:[100],honda:[20,50],hatz:[25]};
+function nextDue(m){const all=intervalsOf(m),max=all[all.length-1],h=Number(m.hours)||0,fo=FIRST_ONLY[brandKey(m)]||[];
+  if(h<max){const i=all.find(v=>v>h);if(i!==undefined)return{at:i,iv:i}}
+  const iv=all.filter(v=>!fo.includes(v)),cyc=Math.floor(h/max)*max,x=h-cyc,i=iv.find(v=>v>x);
+  return i===undefined?{at:cyc+max+iv[0],iv:iv[0]}:{at:cyc+i,iv:i}}
 const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
 const isoD=d=>{const x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneOffset());return x.toISOString().slice(0,10)};
 function dueInfo(x,base){
@@ -966,7 +972,7 @@ function dueInfo(x,base){
   }
   return{iv:null,date:addDays(b,90),est:true};
 }
-function dueTitle(x,di){const m=mach(x.machine);return`Servicio${di.iv?' de '+di.iv.toLocaleString('es-MX')+' h':''} – ${m?m.n:''}${x.model?' '+x.model:''}`}
+function dueTitle(x,di){const m=mach(x.machine);return`Servicio${di.at?' de las '+di.at.toLocaleString('es-MX')+' h':''} – ${m?m.n:''}${x.model?' · '+x.model:''}`}
 function gcalLink(title,date,details){const d=isoD(date).replace(/-/g,''),e=isoD(addDays(date,1)).replace(/-/g,'');return'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(title)+'&dates='+d+'/'+e+'&details='+encodeURIComponent(details)}
 function icsText(title,date,details){const d=isoD(date).replace(/-/g,''),e=isoD(addDays(date,1)).replace(/-/g,''),esc2=t=>String(t).replace(/[,;\\]/g,m=>'\\'+m).replace(/\n/g,'\\n');
   return['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//AgroRuta//ES','BEGIN:VEVENT','UID:'+Date.now()+'@agroruta','DTSTAMP:'+new Date().toISOString().replace(/[-:]/g,'').slice(0,15)+'Z','DTSTART;VALUE=DATE:'+d,'DTEND;VALUE=DATE:'+e,'SUMMARY:'+esc2(title),'DESCRIPTION:'+esc2(details),'BEGIN:VALARM','TRIGGER:-P3D','ACTION:DISPLAY','DESCRIPTION:'+esc2(title),'END:VALARM','BEGIN:VALARM','TRIGGER:-PT12H','ACTION:DISPLAY','DESCRIPTION:'+esc2(title),'END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n')}
@@ -1041,7 +1047,7 @@ function renderMaquinas(){
   list.querySelectorAll('[data-mq-u]').forEach(b=>b.onclick=()=>{const x=list.querySelector(`[data-mq-box="${b.dataset.mqU}"]`);x.hidden=!x.hidden});
   list.querySelectorAll('[data-mq-r]').forEach(b=>b.onclick=()=>showReminder(maquinas[b.dataset.mqR]));
   list.querySelectorAll('[data-mq-s]').forEach(b=>b.onclick=()=>{const ix=b.dataset.mqS,v=Number($('#mq-h-'+ix).value),w=Number($('#mq-w-'+ix).value);if(!(v>=0)){toast('Escribe las horas');return}maquinas[ix].hours=v;if(w>0)maquinas[ix].week=w;maquinas[ix].updated=new Date().toISOString();saveMaq();toast('Horas actualizadas');renderMaquinas()});
-  list.querySelectorAll('[data-mq-d]').forEach(b=>b.onclick=()=>{b.outerHTML=`<button class="btn sm" style="background:var(--danger);color:#fff" type="button" id="mq-del">Sí, borrarla</button>`;$('#mq-del').onclick=()=>{maquinas.splice(b.dataset.mqD,1);saveMaq();renderMaquinas()}});
+  list.querySelectorAll('[data-mq-d]').forEach(b=>b.onclick=()=>{b.outerHTML=`<button class="btn sm" style="background:var(--danger);color:var(--on-danger)" type="button" id="mq-del">Sí, borrarla</button>`;$('#mq-del').onclick=()=>{maquinas.splice(b.dataset.mqD,1);saveMaq();renderMaquinas()}});
   renderMqForm();
 }
 function renderMqForm(){
