@@ -1,0 +1,17 @@
+{
+  "name": "AgroRuta Equipo",
+  "short_name": "AR Equipo",
+  "description": "Órdenes, agenda, gastos y fotos del equipo de AgroRuta Móvil",
+  "lang": "es-MX",
+  "id": "./",
+  "start_url": "./#tecnico",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#141812",
+  "theme_color": "#2F6B3A",
+  "icons": [
+    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}

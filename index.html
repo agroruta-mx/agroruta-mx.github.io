@@ -648,7 +648,10 @@ function buildOrder(d,folio,origen){
     date:d.date,slot:d.slot,name:t(d.name),phone:t(d.phone),hours:d.hours||'',week:Number(d.week)||0,notes:t(d.notes),
     interval:d.interval||null,junto:!!d.junto&&SMALL.includes(d.machine),brand:brandKey(d),hp:sizeOf(d)?sizeOf(d).id:null,total:q.total,traslado:q.traslado,costo:q.costo,origen:origen||'app',estado:'pendiente',tecnico:'',done:[],techNotes:'',created:new Date().toISOString(),updated:new Date().toISOString()};
 }
+const NUBE={url:'https://edknbmbzipckgbshmuha.supabase.co',key:'sb_publishable_B8O7gCqsK_LJgCPVqEew8w_HxunwAQM'};
+function enviarNube(o){try{fetch(NUBE.url+'/rest/v1/rpc/crear_pedido',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json',apikey:NUBE.key},body:JSON.stringify({p:o})}).catch(()=>{})}catch(e){}}
 async function saveOrder(o){
+  if(!TEAM)enviarNube(o);
   let synced=false;
   if(mode==='db'&&canWrite){
     try{await db.collection('ordenes').doc(o.folio).set(o);synced=true}
