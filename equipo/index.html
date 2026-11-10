@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<meta name="theme-color" content="#2F6B3A">
+<meta name="theme-color" content="#1E2419">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -50,7 +50,7 @@ body.team::before{background:var(--fg)}
 .dayh{font:800 15px/1 var(--f-body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-top:6px}
 .abtn{appearance:none;border:2px solid currentColor;background:transparent;color:inherit;border-radius:10px;min-width:44px;min-height:40px;font:800 16px/1 var(--f-body);cursor:pointer}
 .abtn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-html.big{zoom:1.15}
+.big main,.big .sheet .panel,.big #login .lg{zoom:1.15}
 .big .sync span{display:none}
 @media (max-width:420px){.big .tag{font-size:11px;padding:4px 6px}.big .brand{font-size:19px}}
 .sync span{white-space:nowrap}
@@ -153,6 +153,18 @@ nav.tabs a[aria-current="page"] svg{color:var(--accent)}
 .done{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;padding:24px 16px}
 .done .folio{font:800 34px/1 var(--f-display);letter-spacing:.03em;color:var(--green)}
 @media (prefers-reduced-motion:no-preference){.sheet .panel{animation:up .22s ease-out}@keyframes up{from{transform:translateY(30px);opacity:.6}}}
+/* --- Celular instalado (iPhone/Android): fondo oscuro detrás de todo, contenido claro en medio --- */
+:root{--th:#1E2419}
+html,body{background:var(--th)!important}
+body{margin:0;height:auto;min-height:100%;overscroll-behavior-y:none}
+body.team::before{display:none}
+.app{background:var(--bg);min-height:100vh;min-height:100dvh;padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+.team header.top{position:sticky;top:0;background:var(--th);color:#fff;padding-top:calc(12px + env(safe-area-inset-top,0px));box-shadow:0 0 0 100vmax var(--th);clip-path:inset(-100vmax -100vmax 0 -100vmax)}
+.team .sync{color:#fff}
+.team nav.tabs{background:var(--th);border-top:0}
+.team nav.tabs a{color:#A3AD97}
+.team nav.tabs a[aria-current="page"],.team nav.tabs a[aria-current="page"] svg{color:var(--accent)}
+nav.tabs::after{content:"";position:absolute;left:0;right:0;top:100%;height:120px;background:var(--th)}
 /* --- Equipo en la nube: login, agenda, dinero, fotos --- */
 @media (min-width:900px){.app,nav.tabs .in,.sheet .panel{max-width:760px}}
 #login{position:fixed;inset:0;z-index:50;background:var(--bg);overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 48px) 16px 32px}
@@ -487,8 +499,8 @@ function showCopyFallback(t){openSheet(`<div class="stack"><h3>Copia este texto<
 /* ---------- cotización ---------- */
 function blankDraft(){return{machine:'',services:[],muni:'',urgent:false,date:'',slot:'mañana',name:'',phone:'',place:'',model:'',hours:'',notes:'',interval:null,brand:'jd',hp:'m',junto:false,week:''}}
 let draft=blankDraft();
-try{const s=JSON.parse(localStorage.getItem('ar_draft')||'null');if(s)draft=Object.assign(blankDraft(),s)}catch(e){}
-function saveDraft(){try{localStorage.setItem('ar_draft',JSON.stringify(draft))}catch(e){}}
+try{const s=JSON.parse(localStorage.getItem('eq_draft')||'null');if(s)draft=Object.assign(blankDraft(),s)}catch(e){}
+function saveDraft(){try{localStorage.setItem('eq_draft',JSON.stringify(draft))}catch(e){}}
 
 function quote(d){
   const m=mach(d.machine), k=m?m.k:1;
@@ -722,9 +734,9 @@ async function createOrder(){
 
 /* ---------- datos ---------- */
 let db=null,mode='local',canWrite=true,orders=[],localOrders=[];
-try{localOrders=JSON.parse(localStorage.getItem('ar_orders')||'[]')}catch(e){}
+try{localOrders=JSON.parse(localStorage.getItem('eq_orders')||'[]')}catch(e){}
 orders=localOrders;
-function saveLocal(){try{localStorage.setItem('ar_orders',JSON.stringify(localOrders))}catch(e){}}
+function saveLocal(){try{localStorage.setItem('eq_orders',JSON.stringify(localOrders))}catch(e){}}
 function setSync(on,t){const s=$('#sync');s.className='sync'+(on?' on':'');s.querySelector('span').textContent=t}
 async function initData(){
   if(!TEAM){mode='local';renderAll();return}
@@ -741,7 +753,7 @@ async function initData(){
     setSync(!snap.metadata.fromCache,snap.metadata.fromCache?'Actualizando…':(canWrite?'En línea':'Solo lectura'));
     renderAll();abrirPendiente();
   },err=>{clearTimeout(timer);setSync(false,'Sin conexión');});
-  db.doc('config/ajustes').onSnapshot(sn=>{if(sn.exists){applyAjustes(sn.data());try{localStorage.setItem('ar_ajustes',JSON.stringify(sn.data()))}catch(e){};if(view==='cotizar')renderCotizar()}},()=>{});
+  db.doc('config/ajustes').onSnapshot(sn=>{if(sn.exists){applyAjustes(sn.data());try{localStorage.setItem('eq_ajustes',JSON.stringify(sn.data()))}catch(e){};if(view==='cotizar')renderCotizar()}},()=>{});
   db.collection('gastos').orderBy('fecha','desc').limit(2000).onSnapshot(sn=>{gastos=sn.docs.map(d=>Object.assign({id:d.id},d.data()));if(view==='dinero'&&!gBusy&&!$('#di-body').contains(document.activeElement))renderDinero();if(!$('#sheet').hidden&&openId)renderAll()},()=>{});
   migrateLocal();
 }
@@ -780,7 +792,7 @@ const AJ=[
 ];
 const AJ_DEF=Object.fromEntries(AJ.map(a=>[a[0],a[3]()]));
 function applyAjustes(v){if(!v)return;AJ.forEach(a=>{const n=Number(v[a[0]]);if(isFinite(n)&&n>=0)a[4](n)});recalcZones()}
-try{applyAjustes(JSON.parse(localStorage.getItem('ar_ajustes')||'null'))}catch(e){}
+try{applyAjustes(JSON.parse(localStorage.getItem('eq_ajustes')||'null'))}catch(e){}
 function renderAjustes(){
   $('#aj-body').innerHTML=cuentaHTML()+(`<h3>Precios</h3><p class="muted small">Cambia un valor y todos los precios se recalculan. Las órdenes que ya existen conservan su total.</p>
    ${AJ.map(a=>`<label class="f">${a[1]} <span class="h">${a[2]}</span><input type="number" inputmode="decimal" step="any" min="0" id="aj-${a[0]}" value="${+a[3]().toFixed(2)}"></label>`).join('')}
@@ -792,7 +804,7 @@ function renderAjustes(){
   renderCuenta();
 }
 async function saveAjustes(v){
-  applyAjustes(v);try{localStorage.setItem('ar_ajustes',JSON.stringify(v))}catch(e){}
+  applyAjustes(v);try{localStorage.setItem('eq_ajustes',JSON.stringify(v))}catch(e){}
   if(mode==='db'&&canWrite){try{await db.doc('config/ajustes').set(v)}catch(e){toast('No se pudo guardar en línea');return}}
   toast('Ajustes guardados');renderView();
 }
@@ -1006,8 +1018,8 @@ function renderHomeNext(){if(!$('#home-next'))return;
 }
 
 /* ---------- mis máquinas ---------- */
-let maquinas=[];try{maquinas=JSON.parse(localStorage.getItem('ar_maquinas')||'[]')}catch(e){}
-function saveMaq(){try{localStorage.setItem('ar_maquinas',JSON.stringify(maquinas))}catch(e){}}
+let maquinas=[];try{maquinas=JSON.parse(localStorage.getItem('eq_maquinas')||'[]')}catch(e){}
+function saveMaq(){try{localStorage.setItem('eq_maquinas',JSON.stringify(maquinas))}catch(e){}}
 let mqForm={machine:'tractor',hp:'m',brand:'jd',model:'',hours:'',week:''};
 const FIRST_ONLY={jd:[100],mf:[100],kubota:[50],cjd:[100],honda:[20,50],hatz:[25]};
 function nextDue(m){const all=intervalsOf(m),max=all[all.length-1],h=Number(m.hours)||0,fo=FIRST_ONLY[brandKey(m)]||[];
@@ -1123,12 +1135,12 @@ function renderMqForm(){
 }
 
 /* ---------- gastos ---------- */
-let gastos=[];try{gastos=JSON.parse(localStorage.getItem('ar_gastos')||'[]')}catch(e){}
+let gastos=[];try{gastos=JSON.parse(localStorage.getItem('eq_gastos')||'[]')}catch(e){}
 const GTIPOS=[['diesel','Diésel'],['refacciones','Refacciones'],['aceite','Aceite y filtros'],['herramienta','Herramienta'],['comida','Comida'],['casetas','Casetas'],['otro','Otro']];
 const gTipo=id=>(GTIPOS.find(x=>x[0]===id)||[0,'Otro'])[1];
 const gastosDe=id=>gastos.filter(g=>g.orden===id);
 const newGid=()=>'G-'+Date.now().toString(36).toUpperCase()+Math.random().toString(36).slice(2,5).toUpperCase();
-function saveGastosLocal(){try{localStorage.setItem('ar_gastos',JSON.stringify(gastos))}catch(e){}}
+function saveGastosLocal(){try{localStorage.setItem('eq_gastos',JSON.stringify(gastos))}catch(e){}}
 async function saveGasto(g){
   g.updated=new Date().toISOString();if(!g.created)g.created=g.updated;if(!g.quien&&window.AR&&AR.email)g.quien=AR.email();
   const prev=gastos.slice(),i=gastos.findIndex(x=>x.id===g.id);if(i>=0)gastos[i]=g;else gastos.unshift(g);
@@ -1319,9 +1331,13 @@ async function renderCuenta(){
    <div class="stack" style="gap:8px"><b>Notificaciones</b><p class="small">${NOTIF_TXT[st]||NOTIF_TXT.no}</p>
     ${st==='apagado'?`<button class="btn green block" type="button" id="cu-on">Activar notificaciones</button>`:''}
     ${st==='activo'?`<div class="flow"><button class="btn ghost sm" type="button" id="cu-test">Mandar prueba</button><button class="btn ghost sm" type="button" id="cu-off">Apagar aquí</button></div>`:''}</div>
-   <div class="stack" style="gap:8px;border-top:1px solid var(--line);padding-top:12px"><span class="small">Sesión: <b>${esc(AR.email())}</b></span><button class="btn ghost sm" type="button" id="cu-out">Cerrar sesión</button></div>`;
-  const on=$('#cu-on');if(on)on.onclick=async()=>{on.disabled=true;on.textContent='Activando…';try{await AR.push.activar();toast('Notificaciones activadas');try{await AR.push.prueba()}catch(e){}}catch(e){toast(e&&e.message==='permiso'?'No diste permiso. Puedes cambiarlo en los ajustes del navegador.':'No se pudieron activar: '+(e&&e.message||''))}renderCuenta()};
-  const ts=$('#cu-test');if(ts)ts.onclick=async()=>{ts.disabled=true;try{const r=await AR.push.prueba();toast(r&&r.ok?'Prueba enviada a '+r.ok+' aparato'+(r.ok===1?'':'s'):'No hay aparatos con notificaciones activas')}catch(e){toast('No se pudo mandar la prueba. ¿Ya está creada la función "notificar" en Supabase?')}ts.disabled=false};
+   <div class="stack" style="gap:8px;border-top:1px solid var(--line);padding-top:12px"><span class="small">Sesión: <b>${esc(AR.email())}</b></span><span class="muted small">Versión 1110-2244</span><button class="btn ghost sm" type="button" id="cu-out">Cerrar sesión</button></div>`;
+  const on=$('#cu-on');if(on)on.onclick=async()=>{on.disabled=true;on.textContent='Activando… (si sale un aviso, dale Permitir)';let msg='';
+    try{await AR.push.activar();toast('Notificaciones activadas');AR.push.prueba().catch(()=>{})}
+    catch(e){const m=e&&e.message||'';msg=m==='permiso'?'No se dio permiso. En la Mac: Ajustes del Sistema → Notificaciones → AgroRuta Equipo → Permitir. En iPhone: Ajustes → Notificaciones → AR Equipo.':m==='permiso-tiempo'?'No contestaste el aviso de permiso. Búscalo arriba a la derecha de la pantalla o revisa Ajustes del Sistema → Notificaciones.':m==='suscribir'?'El navegador no respondió al registrar el aparato. Cierra la app, ábrela otra vez e intenta de nuevo.':m==='guardar'?'No se pudo guardar en la nube. Revisa tu señal e intenta otra vez.':'No se pudieron activar: '+m}
+    await renderCuenta();if(msg){const c=$('#aj-nube');if(c)c.insertAdjacentHTML('beforeend',`<p class="err">${esc(msg)}</p>`)}};
+  const ts=$('#cu-test');if(ts)ts.onclick=async()=>{ts.disabled=true;let t='';try{const r=await AR.push.prueba();t=r&&r.ok?'Prueba enviada a '+r.ok+' aparato'+(r.ok===1?'':'s')+(r.fail?' · '+r.fail+' fallaron':'')+'. Si no llega en 1 minuto, revisa que no tengas activado No molestar.':'No llegó a ningún aparato'+(r&&r.total!=null?' (registrados: '+r.total+')':'')+'.';if(r&&r.errores&&r.errores.length)t+=' Detalle: '+r.errores.join(' | ')}catch(e){t='No se pudo llamar a la función "notificar": '+(e&&e.message||e)}
+    ts.disabled=false;const c=$('#aj-nube');c.querySelector('.cu-res')?.remove();c.insertAdjacentHTML('beforeend',`<p class="small cu-res" style="overflow-wrap:anywhere">${esc(t)}</p>`)};
   const of=$('#cu-off');if(of)of.onclick=async()=>{try{await AR.push.apagar()}catch(e){}toast('Notificaciones apagadas en este aparato');renderCuenta()};
   const ins=$('#cu-inst');if(ins)ins.onclick=async()=>{try{instEvt.prompt();await instEvt.userChoice}catch(e){}instEvt=null;renderCuenta()};
   $('#cu-out').onclick=()=>{const b=$('#cu-out');b.outerHTML=`<div class="flow"><button class="btn ghost sm" type="button" onclick="renderCuenta()">No</button><button class="btn sm" type="button" id="cu-out2" style="background:var(--danger);color:var(--on-danger)">Sí, cerrar sesión</button></div>`;$('#cu-out2').onclick=()=>AR.logout()};

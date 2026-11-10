@@ -16,7 +16,7 @@
   addEventListener('hashchange', () => { if (leerHash()) document.dispatchEvent(new Event('ar-abrir')) });
 
   /* ---- service worker (app instalable + notificaciones) ---- */
-  AR.swReady = ('serviceWorker' in navigator) ? navigator.serviceWorker.register('sw.js', { scope: './' }).then(() => navigator.serviceWorker.ready).catch(() => null) : Promise.resolve(null);
+  AR.swReady = ('serviceWorker' in navigator) ? navigator.serviceWorker.register('sw.js', { scope: './', updateViaCache: 'none' }).then(() => navigator.serviceWorker.ready).catch(() => null) : Promise.resolve(null);
   if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => {
     const d = e.data || {}; if (d.tipo !== 'abrir') return;
     const mm = String(d.url || '').match(/#orden=(.+)$/);
@@ -153,11 +153,12 @@
     },
     async guardar(s) { const j = s.toJSON(); const { error } = await sb.from('push_subs').upsert({ endpoint: j.endpoint, sub: j, user_id: AR.user && AR.user.id }); if (error) throw error },
     async activar() {
-      const p = await Notification.requestPermission(); if (p !== 'granted') throw new Error('permiso');
+      const T = (pr, ms, n) => Promise.race([pr, new Promise((_, no) => setTimeout(() => no(new Error(n)), ms))]);
+      const p = await T(Notification.requestPermission(), 90000, 'permiso-tiempo'); if (p !== 'granted') throw new Error('permiso');
       const r = await swR(); if (!r) throw new Error('sw');
-      let s = await r.pushManager.getSubscription();
-      if (!s) s = await r.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u(C.vapid) });
-      await this.guardar(s); return true;
+      let s = await T(r.pushManager.getSubscription(), 15000, 'suscribir');
+      if (!s) s = await T(r.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u(C.vapid) }), 30000, 'suscribir');
+      await T(this.guardar(s), 20000, 'guardar'); return true;
     },
     async apagar(silencio) {
       const r = await swR(); if (!r) return; const s = await r.pushManager.getSubscription(); if (!s) return;
