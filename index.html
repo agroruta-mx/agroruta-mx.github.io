@@ -392,6 +392,7 @@ const brandOf=d=>BRANDS[brandKey(d)];
 const hasHours=m=>brandsFor(m).length>0;
 const intervalsOf=d=>Object.keys(brandOf(d).iv).map(Number).sort((a,b)=>a-b);
 const SMALL=['bomba','generador','aspersora'];
+const MODEL_EJ={tractor:'John Deere 5075E',camioneta:'Toyota Hilux 2018 o Nissan NP300',cosechadora:'John Deere S770',bomba:'Honda WB30',aspersora:'Honda WJR2525 o Swissmex',generador:'Honda EG6500'};
 const afinDesc=d=>{const t=brandOf(d).afin||'Paquete del motor';return['bomba','aspersora'].includes(d.machine)?t:t.replace(/ y revisión de la bomba/,'').replace(/, ([^,]+)$/,' y $1')};
 const HOUR_MANAGED=['afinacion','aceite','combustible','revision','aire','hid_filtro','hid_aceite','engrase','enfriamiento','bujia','valvulas','bomba_rev'];
 const intervalSvcs=(i,d=draft)=>[...(brandOf(d).iv[i]||[]),...BASE].filter(id=>allowed(id,d.machine,d));
@@ -516,7 +517,7 @@ function totalHTML(){
 }
 function bindPick(root,after){
   root.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{
-    const m=b.dataset.m;if(m!==draft.machine){draft.machine=m;draft.interval=null;draft.services=draft.services.filter(id=>allowed(id,m));draft.brand=brandKey(draft);const z=SIZES[m];if(z&&!z.find(x=>x.id===draft.hp))draft.hp=sizeOf(draft).id;}
+    const m=b.dataset.m;if(m!==draft.machine){if(draft.machine){draft.model='';draft.hours='';draft.week=''}draft.machine=m;draft.interval=null;draft.services=draft.services.filter(id=>allowed(id,m));draft.brand=brandKey(draft);const z=SIZES[m];if(z&&!z.find(x=>x.id===draft.hp))draft.hp=sizeOf(draft).id;}
     saveDraft();after()});
   root.querySelectorAll('[data-hp]').forEach(b=>b.onclick=()=>{draft.hp=b.dataset.hp;saveDraft();after('hp')});
   root.querySelectorAll('[data-s]').forEach(c=>c.onchange=()=>{
@@ -534,7 +535,7 @@ function bindPick(root,after){
   const hg=root.querySelector('#h-go');if(hg)hg.onclick=()=>{const h=root.querySelector('#h-in').value;if(!h){toast('Escribe las horas del horómetro');return}draft.hours=h;applyInterval(intervalFor(h));toast('Te toca el servicio de '+draft.interval.toLocaleString('es-MX')+' h');after()};
   root.querySelectorAll('[data-f]').forEach(i=>{
     const ev=(i.type==='checkbox'||i.tagName==='SELECT')?'change':'input';
-    i.addEventListener(ev,()=>{draft[i.dataset.f]=i.type==='checkbox'?i.checked:i.value;saveDraft();if(['muni','urgent','junto'].includes(i.dataset.f))after(true)});
+    i.addEventListener(ev,()=>{draft[i.dataset.f]=i.type==='checkbox'?i.checked:i.value;saveDraft();if(['muni','urgent','junto'].includes(i.dataset.f))after(true);else if(i.dataset.f==='model'&&$('#w-sum'))$('#w-sum').innerHTML=summaryHTML()});
   });
 }
 
@@ -609,11 +610,11 @@ function renderPedir(){
     <div id="w-total">${totalHTML()}</div>`;
   if(step===3)body.innerHTML=`<label class="f">Nombre<input type="text" data-f="name" id="w-name" autocomplete="name" value="${esc(draft.name)}"></label>
     <label class="f">Teléfono o WhatsApp<input type="tel" data-f="phone" id="w-phone" autocomplete="tel" inputmode="tel" value="${esc(draft.phone)}"></label>
-    <label class="f">Marca y modelo de la máquina <span class="h">Opcional. Ej. John Deere 5075E</span><input type="text" data-f="model" id="w-model" value="${esc(draft.model)}"></label>
-    <label class="f">Horas del horómetro <span class="h">Opcional, ayuda al técnico</span><input type="number" data-f="hours" id="w-hours" inputmode="numeric" value="${esc(draft.hours)}"></label>
+    <label class="f">Marca y modelo ${draft.machine==='camioneta'?'de la camioneta':'de la máquina'} <span class="h">Opcional. Ej. ${esc(MODEL_EJ[draft.machine]||'John Deere 5075E')}</span><input type="text" data-f="model" id="w-model" value="${esc(draft.model)}"></label>
+    <label class="f">${draft.machine==='camioneta'?'Kilometraje':'Horas del horómetro'} <span class="h">Opcional, ayuda al técnico</span><input type="number" data-f="hours" id="w-hours" inputmode="numeric" value="${esc(draft.hours)}"></label>
     ${hasHours(draft.machine)?`<label class="f">¿Cuántas horas la usa por semana? <span class="h">Opcional, para avisarle de su siguiente servicio</span><input type="number" data-f="week" id="w-week" inputmode="numeric" value="${esc(draft.week||'')}"></label>`:''}
     <label class="f">¿Algo más que debamos saber? <span class="h">Opcional. Ruidos, fallas, acceso al terreno</span><textarea data-f="notes" id="w-notes">${esc(draft.notes)}</textarea></label>
-    ${summaryHTML()}`;
+    <div id="w-sum">${summaryHTML()}</div>`;
   bindPick(body,x=>{rerender(x);setNextLabel()});
   body.querySelectorAll('[data-slot]').forEach(b=>b.onclick=()=>{draft.slot=b.dataset.slot;saveDraft();body.querySelectorAll('[data-slot]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
 }
@@ -869,7 +870,7 @@ function renderOrder(){
    ${nx&&o.estado!=='cancelada'?`<button class="btn primary block" type="button" id="o-next">${NEXT_LABEL[o.estado]}</button>`:''}
    <div class="card"><dl class="kv">
     <dt>Teléfono</dt><dd><b style="font-variant-numeric:tabular-nums">${esc(o.phone)}</b></dd>
-    <dt>Máquina</dt><dd>${esc(m?m.n:'')}${o.hp?' · '+esc(hpOf(o).r):''}${o.model?' · '+esc(o.model):''}${o.hours?' · '+esc(o.hours)+' h':''}</dd>
+    <dt>Máquina</dt><dd>${esc(m?m.n:'')}${o.hp?' · '+esc(hpOf(o).r):''}${o.model?' · '+esc(o.model):''}${o.hours?' · '+esc(o.hours)+(o.machine==='camioneta'?' km':' h'):''}</dd>
     <dt>Cuándo</dt><dd>${esc(fmtDate(o.date))}, ${esc(o.slot)}${o.urgent?' · urgente':''}</dd>
     <dt>Dónde</dt><dd>${esc(o.muni)}${o.place?' · '+esc(o.place):''}</dd>
     ${o.interval?`<dt>Servicio</dt><dd>${o.interval.toLocaleString('es-MX')} horas</dd>`:''}
@@ -1082,7 +1083,7 @@ function renderMqForm(){
    <label class="f">Tipo<select id="mf-m">${ms.map(m=>`<option value="${m.id}" ${f.machine===m.id?'selected':''}>${esc(m.n)}</option>`).join('')}</select></label>
    ${z?`<label class="f">Tamaño<select id="mf-hp">${z.map(x=>`<option value="${x.id}" ${f.hp===x.id?'selected':''}>${esc(x.n)} · ${esc(x.r)}</option>`).join('')}</select></label>`:''}
    <label class="f">Marca<select id="mf-b">${brandsFor(f.machine).map(([k,v])=>`<option value="${k}" ${f.brand===k?'selected':''}>${esc(v.n)}</option>`).join('')}</select></label>
-   <label class="f">Modelo <span class="h">Opcional. Ej. 5075E</span><input type="text" id="mf-mo" value="${esc(f.model)}"></label>
+   <label class="f">Modelo <span class="h">Opcional. Ej. ${esc(MODEL_EJ[f.machine]||'5075E')}</span><input type="text" id="mf-mo" value="${esc(f.model)}"></label>
    <label class="f">Horas del horómetro<input type="number" inputmode="numeric" id="mf-h" value="${esc(f.hours)}"></label>
    <label class="f">¿Cuántas horas la usas por semana? <span class="h">Opcional, para calcular la fecha del siguiente servicio</span><input type="number" inputmode="numeric" id="mf-w" value="${esc(f.week)}"></label>
    <p class="err" id="mf-err" hidden></p>
