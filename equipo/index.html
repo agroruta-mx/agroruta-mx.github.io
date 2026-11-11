@@ -103,6 +103,9 @@ section[hidden]{display:none!important}
 label.f{display:flex;flex-direction:column;gap:6px;font-weight:700}
 label.f span.h{font-weight:400;font-size:14px;color:var(--muted)}
 input[type=text],input[type=tel],input[type=date],input[type=number],select,textarea{width:100%;min-height:52px;border:2px solid var(--line);border-radius:12px;background:var(--surface);color:var(--fg);font:17px var(--f-body);padding:10px 12px}
+input[type=date]{-webkit-appearance:none;appearance:none;display:block;min-width:0;max-width:100%;text-align:left;line-height:1.3}
+input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0}
+input[type=date]::-webkit-calendar-picker-indicator{margin-left:auto}
 textarea{min-height:90px;resize:vertical}
 .seg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .seg button{min-height:52px;border-radius:12px;border:2px solid var(--line);background:var(--surface);color:var(--fg);font:700 16px var(--f-body);cursor:pointer}
@@ -165,6 +168,13 @@ body.team::before{display:none}
 .team nav.tabs a{color:#A3AD97}
 .team nav.tabs a[aria-current="page"],.team nav.tabs a[aria-current="page"] svg{color:var(--accent)}
 nav.tabs::after{content:"";position:absolute;left:0;right:0;top:100%;height:120px;background:var(--th)}
+@media (max-width:370px){.team .sync span{display:none}.brand{font-size:19px}.tag{font-size:11px;padding:4px 6px}header.top .row{gap:6px}}
+/* --- Clientes por municipio --- */
+.mbar{display:flex;flex-direction:column;gap:4px}
+.mbar .mrow{display:flex;justify-content:space-between;gap:8px;font-size:15px}
+.mbar .mrow span{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.mtrack{height:10px;border-radius:5px;background:var(--surface-2);overflow:hidden}
+.mtrack i{display:block;height:100%;background:var(--accent);border-radius:5px}
 /* --- Equipo en la nube: login, agenda, dinero, fotos --- */
 @media (min-width:900px){.app,nav.tabs .in,.sheet .panel{max-width:760px}}
 #login{position:fixed;inset:0;z-index:50;background:var(--bg);overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 48px) 16px 32px}
@@ -321,6 +331,13 @@ nav.tabs::after{content:"";position:absolute;left:0;right:0;top:100%;height:120p
       <div class="stack" id="di-body"></div>
     </section>
 
+    <!-- CLIENTES -->
+    <section id="v-clientes" class="stack" hidden data-team>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2>Clientes</h2><button class="btn green sm" type="button" id="cl-nuevo">+ Nuevo cliente</button></div>
+      <div style="display:flex;gap:8px"><input type="text" id="cl-q" placeholder="Buscar nombre, teléfono, municipio o serie" style="flex:1;min-width:0" autocomplete="off"><button type="button" class="btn ghost sm" id="cl-clear" hidden aria-label="Borrar búsqueda">✕</button></div>
+      <div class="stack" id="cl-body"></div>
+    </section>
+
     <!-- AJUSTES -->
     <section id="v-ajustes" class="stack" hidden data-team>
       <h2>Precios y ajustes</h2>
@@ -347,7 +364,7 @@ nav.tabs::after{content:"";position:absolute;left:0;right:0;top:100%;height:120p
     <a href="#agenda" data-v="agenda" data-team><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18M7 14h2M11 14h2M15 14h2M7 18h2M11 18h2"/></svg>Agenda</a>
     <a href="#pedir" data-v="pedir" data-team><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Nueva</a>
     <a href="#dinero" data-v="dinero" data-team><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></svg>Dinero</a>
-    <a href="#cotizar" data-v="cotizar" data-team><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M8 6h8M8 11h2M14 11h2M8 15h2M14 15h2"/></svg>Cotizar</a>
+    <a href="#clientes" data-v="clientes" data-team><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14.8c1.6.9 2.6 2.6 3 5.2"/></svg>Clientes</a>
     <a href="#ajustes" data-v="ajustes" data-team><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>Ajustes</a>
     <a href="#inicio" data-v="inicio" data-cli><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Inicio</a>
     <a href="#pedir" data-v="pedir" data-cli><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>Pedir</a>
@@ -498,10 +515,10 @@ async function copyText(t){try{await navigator.clipboard.writeText(t);toast('Cop
 function showCopyFallback(t){openSheet(`<div class="stack"><h3>Copia este texto</h3><textarea id="cpy" rows="10" readonly>${esc(t)}</textarea><button class="btn ghost block" type="button" onclick="closeSheet()">Listo</button></div>`);const a=$('#cpy');a.focus();a.select()}
 
 /* ---------- cotización ---------- */
-function blankDraft(){return{machine:'',services:[],muni:'',urgent:false,date:'',slot:'mañana',name:'',phone:'',place:'',model:'',hours:'',notes:'',interval:null,brand:'jd',hp:'m',junto:false,week:''}}
+function blankDraft(){return{machine:'',services:[],muni:'',urgent:false,date:'',slot:'',name:'',phone:'',place:'',model:'',hours:'',notes:'',interval:null,brand:'jd',hp:'m',junto:false,week:'',clienteId:'',maquinaId:'',serie:''}}
 let draft=blankDraft();
-try{const s=JSON.parse(localStorage.getItem('eq_draft')||'null');if(s)draft=Object.assign(blankDraft(),s)}catch(e){}
-function saveDraft(){try{localStorage.setItem('eq_draft',JSON.stringify(draft))}catch(e){}}
+try{localStorage.removeItem('eq_draft')}catch(e){} /* el equipo siempre empieza la Nueva orden en blanco */
+function saveDraft(){}
 
 function quote(d){
   const m=mach(d.machine), k=m?m.k:1;
@@ -584,7 +601,7 @@ function totalHTML(){
 }
 function bindPick(root,after){
   root.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{
-    const m=b.dataset.m;if(m!==draft.machine){if(draft.machine){draft.model='';draft.hours='';draft.week='';draft.junto=false}draft.machine=m;draft.interval=null;draft.services=[];draft.brand=brandKey(draft);const z=SIZES[m];if(z&&!z.find(x=>x.id===draft.hp))draft.hp=sizeOf(draft).id;}
+    const m=b.dataset.m;if(m!==draft.machine){if(draft.machine){draft.model='';draft.hours='';draft.week='';draft.junto=false;draft.maquinaId='';draft.serie=''}draft.machine=m;draft.interval=null;draft.services=[];draft.brand=brandKey(draft);const z=SIZES[m];if(z&&!z.find(x=>x.id===draft.hp))draft.hp=sizeOf(draft).id;}
     saveDraft();after()});
   root.querySelectorAll('[data-hp]').forEach(b=>b.onclick=()=>{draft.hp=b.dataset.hp;saveDraft();after('hp')});
   root.querySelectorAll('[data-s]').forEach(c=>c.onchange=()=>{
@@ -667,12 +684,12 @@ function renderPedir(){
   $('#wiz-prog').querySelectorAll('i').forEach((i,n)=>i.className=n<=step?'on':'');
   $('#wiz-back').style.visibility=step?'visible':'hidden';
   setNextLabel();
-  const rerender=(soft)=>{if(soft&&step===1){$('#w-total').innerHTML=totalHTML()}else if(step===0){const y=scrollY;renderPedir();if(SIZES[draft.machine]&&soft!=='hp'){const c=$('#hp-card');if(c)c.scrollIntoView({behavior:'smooth',block:'start'});else scrollTo(0,y)}else setTimeout(()=>{if(draft.machine){step=1;renderPedir();scrollTo(0,0)}},180)}else if(!soft){const y=scrollY;renderPedir();scrollTo(0,y)}else if(step===2||step===3){const t=$('#w-total');if(t)t.innerHTML=totalHTML()}};
-  if(step===0)body.innerHTML=machinesHTML();
+  const rerender=(soft)=>{if(soft&&step===1){$('#w-total').innerHTML=totalHTML()}else if(step===0){const y=scrollY;renderPedir();if(SIZES[draft.machine]&&soft!=='hp'){const c=$('#hp-card');if(c)c.scrollIntoView({behavior:'smooth',block:'start'});else scrollTo(0,y)}else setTimeout(()=>{if(draft.machine&&step===0&&view==='pedir'){step=1;renderPedir();scrollTo(0,0)}},180)}else if(!soft){const y=scrollY;renderPedir();scrollTo(0,y)}else if(step===2||step===3){const t=$('#w-total');if(t)t.innerHTML=totalHTML()}};
+  if(step===0)body.innerHTML=(TEAM?buscarClienteHTML():'')+machinesHTML();
   if(step===1)body.innerHTML=servicesHTML()+`<div id="w-total">${totalHTML()}</div>`;
   if(step===2)body.innerHTML=`${placeHTML()}
     <label class="f">Referencia del lugar <span class="h">Rancho, ejido, carretera, km o liga de Google Maps</span><input type="text" data-f="place" id="w-place" value="${esc(draft.place)}"></label>
-    <label class="f">Día<input type="date" data-f="date" id="w-date" min="${todayISO()}" value="${esc(draft.date)}"></label>
+    <label class="f">Día<input type="date" data-f="date" id="w-date" ${TEAM?'':`min="${todayISO()}"`} value="${esc(draft.date)}"></label>
     <div class="stack" style="gap:6px"><b>Horario</b><div class="seg" id="w-slot">${['mañana','tarde'].map(s=>`<button type="button" data-slot="${s}" aria-pressed="${draft.slot===s}">${s==='mañana'?'Mañana (8–13 h)':'Tarde (13–18 h)'}</button>`).join('')}</div></div>
     <div id="w-total">${totalHTML()}</div>`;
   if(step===3)body.innerHTML=`<label class="f">Nombre<input type="text" data-f="name" id="w-name" autocomplete="name" value="${esc(draft.name)}"></label>
@@ -683,6 +700,8 @@ function renderPedir(){
     <label class="f">¿Algo más que debamos saber? <span class="h">Opcional. Ruidos, fallas, acceso al terreno</span><textarea data-f="notes" id="w-notes">${esc(draft.notes)}</textarea></label>
     <div id="w-sum">${summaryHTML()}</div>`;
   bindPick(body,x=>{rerender(x);setNextLabel()});
+  if(TEAM&&step===0)bindBuscarCliente();
+  if(TEAM&&step===3){const ph=$('#w-phone');if(ph){ph.insertAdjacentHTML('afterend','<div id="w-cli-hint"></div>');const hint=()=>{const c=fichaDeTel(tel10(ph.value)),H=$('#w-cli-hint');if(!H)return;H.innerHTML=c&&c.id!==draft.clienteId?`<div class="note" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span>Es <b>${esc(c.nombre)}</b> (cliente registrado)</span><button class="btn ghost sm" type="button" id="w-usar">Usar sus datos</button></div>`:'';const u=$('#w-usar');if(u)u.onclick=()=>{Object.assign(draft,{name:c.nombre||draft.name,phone:c.phone||c.tel,clienteId:c.id});if(!draft.muni)draft.muni=c.muni||'';if(!draft.place)draft.place=c.lugar||'';renderPedir()}};ph.addEventListener('input',hint);hint()}}
   body.querySelectorAll('[data-slot]').forEach(b=>b.onclick=()=>{draft.slot=b.dataset.slot;saveDraft();body.querySelectorAll('[data-slot]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
 }
 function setNextLabel(){const b=$('#wiz-next');if(!b)return;const q=quote(draft),t=step>=1&&q.lines.some(l=>l.id!=='revision')?' · '+money(q.total):'';b.textContent=(step===3?(TEAM?'Registrar orden':'Confirmar pedido'):'Siguiente')+t}
@@ -697,13 +716,14 @@ function summaryHTML(){
 function validate(){
   if(step===0&&!draft.machine)return'Toca el tipo de máquina para seguir.';
   if(step===1&&!draft.services.some(x=>x!=='revision'))return'Elige al menos un servicio.';
-  if(step===2){if(!draft.muni)return'Elige el municipio.';if(!draft.date)return'Elige el día del servicio.'}
-  if(step===3){if(draft.name.trim().length<2)return'Escribe tu nombre.';if(draft.phone.replace(/\D/g,'').length<10)return'Escribe un teléfono de 10 dígitos.'}
+  if(step===2){if(!draft.muni)return'Elige el municipio.';if(!draft.date)return'Elige el día del servicio.';if(!TEAM&&draft.date<todayISO())return'Ese día ya pasó. Elige de hoy en adelante.';if(!draft.slot)return'Elige si es en la mañana o en la tarde.'}
+  if(step===3){if(!TEAM&&draft.date&&draft.date<todayISO())return'El día que elegiste ya pasó. Regresa un paso y elige otro.';if(!draft.slot)return'Regresa un paso y elige mañana o tarde.';if(draft.name.trim().length<2)return'Escribe tu nombre.';if(draft.phone.replace(/\D/g,'').length<10)return'Escribe un teléfono de 10 dígitos.'}
   return'';
 }
 $('#wiz-back').onclick=()=>{if(step>0){step--;renderPedir();scrollTo(0,0)}};
 $('#wiz-next').onclick=async()=>{
   const e=validate();if(e){const el=$('#wiz-err');el.textContent=e;el.hidden=false;return}
+  if(step===2&&TEAM&&draft.date<todayISO()&&!confirm('Esta fecha ya pasó ('+fmtDate(draft.date)+'). ¿Seguro que la orden es de ese día?'))return;
   if(step<3){step++;renderPedir();scrollTo(0,0);return}
   $('#wiz-next').disabled=true;
   try{await createOrder()}finally{$('#wiz-next').disabled=false}
@@ -714,7 +734,7 @@ function buildOrder(d,folio,origen){
   const q=quote(d),t=v=>String(v||'').trim();
   return{folio,machine:d.machine,model:t(d.model),services:[...d.services],muni:d.muni,place:t(d.place),urgent:!!d.urgent,
     date:d.date,slot:d.slot,name:t(d.name),phone:t(d.phone),hours:d.hours||'',week:Number(d.week)||0,notes:t(d.notes),
-    interval:d.interval||null,junto:!!d.junto&&SMALL.includes(d.machine),brand:brandKey(d),hp:sizeOf(d)?sizeOf(d).id:null,total:q.total,traslado:q.traslado,costo:q.costo,origen:origen||'app',estado:'pendiente',tecnico:'',done:[],techNotes:'',created:new Date().toISOString(),updated:new Date().toISOString()};
+    interval:d.interval||null,junto:!!d.junto&&SMALL.includes(d.machine),brand:brandKey(d),hp:sizeOf(d)?sizeOf(d).id:null,total:q.total,traslado:q.traslado,costo:q.costo,clienteId:d.clienteId||'',maquinaId:d.maquinaId||'',serie:String(d.serie||'').trim(),origen:origen||'app',estado:'pendiente',tecnico:'',done:[],techNotes:'',created:new Date().toISOString(),updated:new Date().toISOString()};
 }
 async function saveOrder(o){
   let synced=false;
@@ -723,6 +743,7 @@ async function saveOrder(o){
     catch(e){if(e&&e.code==='invalid_argument'){canWrite=false}}
   }
   if(!synced){localOrders.unshift(Object.assign({id:o.folio},o));saveLocal();if(mode!=='db'){orders=localOrders;renderAll()}}
+  if(TEAM)asegurarFicha(Object.assign({id:o.folio},o));
   return synced;
 }
 async function createOrder(){
@@ -752,9 +773,11 @@ async function initData(){
     if(!snap.metadata.fromCache){clearTimeout(timer)}
     orders=snap.docs.map(d=>Object.assign({id:d.id},d.data()));
     setSync(!snap.metadata.fromCache,snap.metadata.fromCache?'Actualizando…':(canWrite?'En línea':'Solo lectura'));
-    renderAll();abrirPendiente();
+    renderAll();abrirPendiente();if(!snap.metadata.fromCache){ordersLive=true;migrarClientes()}
   },err=>{clearTimeout(timer);setSync(false,'Sin conexión');});
   db.doc('config/ajustes').onSnapshot(sn=>{if(sn.exists){applyAjustes(sn.data());try{localStorage.setItem('eq_ajustes',JSON.stringify(sn.data()))}catch(e){};if(view==='cotizar')renderCotizar()}},()=>{});
+  db.collection('clientes').orderBy('nombre','asc').limit(3000).onSnapshot(sn=>{clientes=sn.docs.map(d=>Object.assign({id:d.id},d.data()));if(!sn.metadata.fromCache){clientesLive=true;migrarClientes()}if(view==='clientes'&&!$('#v-clientes').contains(document.activeElement))renderClientes();if(!$('#sheet').hidden&&fichaId&&!cliEdit)renderFicha()},()=>{});
+  db.doc('config/clientes').onSnapshot(sn=>{cliCfg=sn.exists?sn.data():null;if(!sn.metadata.fromCache){cliCfgLive=true;migrarClientes()}},()=>{});
   db.collection('gastos').orderBy('fecha','desc').limit(2000).onSnapshot(sn=>{gastos=sn.docs.map(d=>Object.assign({id:d.id},d.data()));if(view==='dinero'&&!gBusy&&!$('#di-body').contains(document.activeElement))renderDinero();if(!$('#sheet').hidden&&openId)renderAll()},()=>{});
   migrateLocal();
 }
@@ -771,7 +794,7 @@ async function deleteOrder(id){
 async function patchOrder(id,patch){
   patch.updated=new Date().toISOString();
   if(mode==='db'&&canWrite){
-    try{await db.collection('ordenes').doc(id).update(patch);return true}
+    try{await db.collection('ordenes').doc(id).update(patch);const lo=orders.find(x=>x.id===id);if(lo){Object.assign(lo,patch);setTimeout(()=>{if(view==='tecnico')renderTecnico();if(view==='agenda')renderAgenda()},0)}return true}
     catch(e){toast('No se pudo guardar. Revisa tu conexión.');return false}
   }
   const o=localOrders.find(x=>x.id===id);if(!o){toast('Solo lectura: no puedes cambiar esta orden.');return false}
@@ -797,11 +820,12 @@ try{applyAjustes(JSON.parse(localStorage.getItem('eq_ajustes')||'null'))}catch(e
 function renderAjustes(){
   $('#aj-body').innerHTML=cuentaHTML()+(`<h3>Precios</h3><p class="muted small">Cambia un valor y todos los precios se recalculan. Las órdenes que ya existen conservan su total.</p>
    ${AJ.map(a=>`<label class="f">${a[1]} <span class="h">${a[2]}</span><input type="number" inputmode="decimal" step="any" min="0" id="aj-${a[0]}" value="${+a[3]().toFixed(2)}"></label>`).join('')}
-   <div class="note">La app de clientes trae los precios con los que se publicó. Si cambian algo aquí, hay que volver a subirla a GitHub para que coincida.</div>
+   <div class="note">Al guardar, los precios nuevos también aparecen en la app de clientes (en cuanto la abran).</div>
    <button class="btn green block" type="button" id="aj-save">Guardar ajustes</button>
    <button class="btn ghost block" type="button" id="aj-reset">Regresar a los valores originales</button>`);
   $('#aj-save').onclick=()=>saveAjustes(Object.fromEntries(AJ.map(a=>[a[0],Number($('#aj-'+a[0]).value)])));
   $('#aj-reset').onclick=()=>saveAjustes(AJ_DEF);
+  $('#aj-body').insertAdjacentHTML('beforeend',`<div class="card stack" style="gap:8px"><h3>Respaldo</h3><p class="muted small">Baja en un archivo de Excel todas las órdenes, clientes, máquinas, gastos y cobros. Guárdalo de vez en cuando.</p><button class="btn ghost block" type="button" id="aj-xlsx">Descargar todo en Excel</button></div>`);$('#aj-xlsx').onclick=respaldoExcel;
   renderCuenta();
 }
 async function saveAjustes(v){
@@ -812,7 +836,7 @@ async function saveAjustes(v){
 
 /* ---------- vista técnico ---------- */
 let tFilter='hoy',tSearch='';
-const FILTERS=[['hoy','Hoy'],['pendiente','Por confirmar'],['activas','En proceso'],['cobrar','Por cobrar'],['terminada','Terminadas'],['clientes','Clientes'],['recordar','Recordatorios'],['todas','Todas']];
+const FILTERS=[['hoy','Hoy'],['pendiente','Por confirmar'],['activas','En proceso'],['cobrar','Por cobrar'],['terminada','Terminadas'],['recordar','Recordatorios'],['todas','Todas']];
 function filtered(){
   const t=todayISO(),q=tSearch.trim().toLowerCase();
   return orders.filter(o=>{
@@ -887,7 +911,7 @@ function renderTecnico(){
     :`<div class="empty">${orders.length?'No hay órdenes en este filtro.':'Aún no hay órdenes. Cuando alguien pida un servicio aparecerá aquí.'}<br><br><a class="btn green sm" href="#pedir">Registrar la primera orden</a></div>`);
   $('#t-list').querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>openOrder(b.dataset.o));
   const ag=$('#t-agenda');if(ag)ag.onclick=()=>copyText(`*Agenda AgroRuta – ${fmtDate(todayISO())}*\n`+ruta.map((o,i)=>`${i+1}. ${o.slot==='mañana'?'Mañana':'Tarde'} · ${o.name} (${o.phone})\n   ${(mach(o.machine)||{}).n||''}${o.model?' '+o.model:''} · ${(o.services||[]).filter(x=>x!=='revision').map(x=>(svc(x)||{n:x}).n).join(', ')}\n   ${o.muni}${o.place?' · '+o.place:''} · ${money(o.total||0)}`).join('\n')+`\n\nTotal del día: ${money(ruta.reduce((a,o)=>a+(o.total||0),0))}`);
-  $('#t-list').querySelectorAll('[data-qa]').forEach(b=>b.onclick=async()=>{const o=orders.find(x=>x.id===b.dataset.qa);if(!o)return;const nx=NEXT[o.estado];b.disabled=true;const pt={estado:nx};if(nx==='terminada')pt.terminadaEn=new Date().toISOString();if(await patchOrder(o.id,pt)){toast(o.name+': '+stName(nx));if(nx==='terminada')openOrder(o.id)}else b.disabled=false});
+  $('#t-list').querySelectorAll('[data-qa]').forEach(b=>b.onclick=async()=>{const o=orders.find(x=>x.id===b.dataset.qa);if(!o)return;const nx=NEXT[o.estado];if(nx==='camino'){salirARuta(o);return}b.disabled=true;const pt={estado:nx};if(nx==='terminada')pt.terminadaEn=new Date().toISOString();if(await patchOrder(o.id,pt)){toast(o.name+': '+stName(nx));if(nx==='confirmada'||nx==='terminada')asegurarFicha(Object.assign({},o,pt));if(nx==='terminada')openOrder(o.id)}else b.disabled=false});
 }
 $('#t-paste').onclick=openPaste;
 $('#t-search').oninput=e=>{tSearch=e.target.value;$('#t-clear').hidden=!tSearch;renderTecnico()};
@@ -896,8 +920,10 @@ $('#t-clear').onclick=()=>{tSearch='';$('#t-search').value='';$('#t-clear').hidd
 const stopOf=o=>((o.place||'')+' '+o.muni+', Jalisco').trim();
 let openId=null;
 function openOrder(id){if(!TEAM){const o=orders.find(x=>x.id===id);if(o)renderClientOrder(o);return}openId=id;renderOrder()}
-function renderOrder(){
+function renderOrder(preservar){
   const o=orders.find(x=>x.id===openId);if(!o){closeSheet();return}
+  const mismo=preservar===true&&renderOrder.last===openId&&!$('#sheet').hidden,keepV={},keepP=[];
+  if(mismo){$('#sheet-panel').querySelectorAll('input[id]:not([type=file]):not([type=checkbox]),textarea[id],select[id]').forEach(i=>{if(i.value!==i.defaultValue||i.tagName==='SELECT')keepV[i.id]=i.value});$('#sheet-panel').querySelectorAll('[data-met][aria-pressed="true"],[data-slot2][aria-pressed="true"]').forEach(x=>keepP.push(x.dataset.met?'[data-met="'+x.dataset.met+'"]':'[data-slot2="'+x.dataset.slot2+'"]'))}
   const keepD=renderOrder.last===openId?[...$('#sheet-panel').querySelectorAll('details[open]>summary')].map(x=>x.textContent.split(' · ')[0]):[],keepY=$('#sheet .panel')?$('#sheet .panel').scrollTop:0;renderOrder.last=openId;
   const m=mach(o.machine),k=m?m.k:1,done=o.done||[];
   const items=(o.services||[]).flatMap(id=>{const s=svc(id);if(id==='afinacion'){const inc=(brandOf(o).inc||[]).filter(x=>allowed(x,o.machine,o)&&x!=='revision');return inc.map(x=>({id:'af_'+x,n:'Afinación: '+svc(x).n}))}return s&&s.pack?s.pack.map(p=>({id:p,n:svc(p).n})):[{id,n:s?s.n:id}]});
@@ -925,6 +951,7 @@ function renderOrder(){
      <button class="btn green block" type="button" id="o-pay">Marcar como pagado</button></div>`:''}
  ${o.estado==='terminada'?(()=>{const di=dueInfo(o,doneAt(o));return`<div class="card stack" style="gap:8px"><b>Siguiente servicio</b><span>${esc(dueTitle(o,di))} · aprox. ${di.date.toLocaleDateString('es-MX',{day:'numeric',month:'long'})}${di.est?' <span class="muted small">(sugerida, el cliente no dio horas por semana)</span>':''}</span>
      <a class="btn ghost sm" href="${gcalLink('Avisar a '+o.name+': '+dueTitle(o,di),addDays(di.date,-7),'Mandar recordatorio por WhatsApp al '+o.phone+'. Último servicio: '+o.id)}" target="_blank" rel="noopener">Poner aviso en mi calendario (1 semana antes)</a></div>`})():''}
+   ${o.estado==='terminada'?`<a class="btn green block" href="${waLink(notaServicio(o),o.phone)}" target="_blank" rel="noopener">Mandar nota de servicio por WhatsApp</a>`:''}
    <div class="flow"><a class="btn green sm" href="${waLink(clientMsg(o),o.phone)}" target="_blank" rel="noopener">WhatsApp al cliente</a><a class="btn ghost sm" href="${maps}" target="_blank" rel="noopener">Abrir en Maps</a></div>
    <button class="btn ghost sm" type="button" id="o-tel">Copiar teléfono del cliente</button>
    <h3>Lista de trabajo</h3>
@@ -948,7 +975,7 @@ function renderOrder(){
    ${o.estado!=='cancelada'&&o.estado!=='terminada'?`<button class="btn ghost block" type="button" id="o-cancel" style="color:var(--danger)">Cancelar orden</button>`:''}
    ${o.estado==='cancelada'?`<button class="btn ghost block" type="button" id="o-del" style="color:var(--danger)">Borrar orden para siempre</button>`:''}
   </div>`);
-  const nb=$('#o-next');if(nb)nb.onclick=async()=>{nb.disabled=true;const pt={estado:nx};if(nx==='terminada')pt.terminadaEn=new Date().toISOString();if(await patchOrder(o.id,pt))toast(stName(nx));renderOrderSoon()};
+  const nb=$('#o-next');if(nb)nb.onclick=async()=>{if(nx==='camino'){salirARuta(o);return}nb.disabled=true;const pt={estado:nx};if(nx==='terminada')pt.terminadaEn=new Date().toISOString();if(await patchOrder(o.id,pt)){toast(stName(nx));if(nx==='confirmada'||nx==='terminada')asegurarFicha(Object.assign({},o,pt))}renderOrderSoon()};
   let met='Efectivo';$('#sheet-panel').querySelectorAll('[data-met]').forEach(b=>b.onclick=()=>{met=b.dataset.met;$('#sheet-panel').querySelectorAll('[data-met]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
   const pay=$('#o-pay');if(pay)pay.onclick=async()=>{const v=Number($('#o-cob').value);if(!(v>=0)){toast('Escribe cuánto cobraron');return}pay.disabled=true;if(await patchOrder(o.id,{pagado:true,cobrado:v,metodo:met,pagadoEn:new Date().toISOString()}))toast('Pago registrado');renderOrderSoon()};
   let slot2=o.slot;$('#sheet-panel').querySelectorAll('[data-slot2]').forEach(b=>b.onclick=()=>{slot2=b.dataset.slot2;$('#sheet-panel').querySelectorAll('[data-slot2]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
@@ -968,15 +995,16 @@ function renderOrder(){
   });
   bindFotos(o);bindGastosOrden(o);
   if(keepD.length)$('#sheet-panel').querySelectorAll('details>summary').forEach(x=>{if(keepD.includes(x.textContent.split(' · ')[0]))x.parentNode.open=true});
+  if(mismo){Object.entries(keepV).forEach(([k,v])=>{const e=document.getElementById(k);if(e&&e.value!==v){e.value=v;e.dispatchEvent(new Event('input'))}});keepP.forEach(q=>{const e=$('#sheet-panel '+q);if(e&&e.getAttribute('aria-pressed')!=='true')e.click()})}
   if(keepY)$('#sheet .panel').scrollTop=keepY;
 }
 function clientMsg(o){
   const first=(o.name||'').split(' ')[0];
   const m={pendiente:`Hola ${first}, somos AgroRuta Móvil. Recibimos tu pedido ${o.id}. ¿Te confirmamos el servicio para el ${fmtDate(o.date)} por la ${o.slot}?`,
     confirmada:`Hola ${first}, tu servicio ${o.id} quedó confirmado para el ${fmtDate(o.date)} por la ${o.slot}. Total estimado ${money(o.total||0)}.`,
-    camino:`Hola ${first}, el técnico de AgroRuta va en camino a ${o.place||o.muni}.`,
+    camino:`Hola ${first}, el técnico de AgroRuta va en camino a ${o.place||o.muni}${o.llegada?'. Llega aproximadamente a las '+horaTxt(o.llegada):'.'}`,
     servicio:`Hola ${first}, ya estamos trabajando en tu máquina.`,
-    terminada:`Hola ${first}, terminamos el servicio ${o.id}. Total: ${money(o.pagado?(o.cobrado??o.total):(o.total||0))}.${o.techNotes?' Notas del técnico: '+o.techNotes:''}\n\nGuarda este servicio en tu app AgroRuta y te avisamos cuándo toca el siguiente: ${APP_URL}?s=${encodeService(o)}\n\n¡Gracias por confiar en AgroRuta!`,
+    terminada:notaServicio(o),
     cancelada:`Hola ${first}, tu servicio ${o.id} quedó cancelado. Cuando gustes lo reagendamos.`};
   return m[o.estado]||m.pendiente;
 }
@@ -1005,7 +1033,7 @@ function readPaste(){
 }
 function renderOrderSoon(){setTimeout(()=>{if(!$('#sheet').hidden)renderOrder()},60)}
 function openSheet(html){$('#sheet-panel').innerHTML=html;$('#sheet').hidden=false;document.body.style.overflow='hidden'}
-function closeSheet(){$('#sheet').hidden=true;openId=null;renderOrder.last=null;document.body.style.overflow=''}
+function closeSheet(){$('#sheet').hidden=true;openId=null;if(typeof fichaId!=='undefined'){fichaId=null;cliEdit=null}renderOrder.last=null;document.body.style.overflow=''}
 $('#sheet').onclick=e=>{if(e.target.id==='sheet')closeSheet()};
 
 /* ---------- inicio ---------- */
@@ -1279,7 +1307,7 @@ function bindFotos(o){
   P.querySelectorAll('[data-ft]').forEach(b=>b.onclick=()=>{tipo=b.dataset.ft;inp.value='';inp.click()});
   inp.onchange=async()=>{const files=[...inp.files];if(!files.length)return;const id=o.id;subiendo[id]=(subiendo[id]||0)+files.length;renderOrder();
     let ok=0;for(const f of files){try{const path=await AR.fotos.subir(id,f,tipo);const cur=orders.find(x=>x.id===id)||o;
-        if(await patchOrder(id,{fotos:[...(cur.fotos||[]),{path,tipo,at:new Date().toISOString()}]})){ok++;cur.fotos=[...(cur.fotos||[]),{path,tipo,at:new Date().toISOString()}]}}
+        if(await patchOrder(id,{fotos:[...(cur.fotos||[]),{path,tipo,at:new Date().toISOString()}]})){ok++}}
       catch(e){toast('No se pudo subir la foto. Revisa tu señal.')}finally{subiendo[id]--}}
     if(ok)toast(ok===1?'Foto guardada':ok+' fotos guardadas');fShare=null;if(openId===id)renderOrder()};
   P.querySelectorAll('[data-fi]').forEach(b=>b.onclick=()=>{const f=(o.fotos||[])[b.dataset.fi];if(f)verFoto(f.path,fTipo(f.tipo)+' · '+new Date(f.at).toLocaleString('es-MX',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}),async()=>{
@@ -1332,7 +1360,7 @@ async function renderCuenta(){
    <div class="stack" style="gap:8px"><b>Notificaciones</b><p class="small">${NOTIF_TXT[st]||NOTIF_TXT.no}</p>
     ${st==='apagado'?`<button class="btn green block" type="button" id="cu-on">Activar notificaciones</button>`:''}
     ${st==='activo'?`<div class="flow"><button class="btn ghost sm" type="button" id="cu-test">Mandar prueba</button><button class="btn ghost sm" type="button" id="cu-off">Apagar aquí</button></div>`:''}</div>
-   <div class="stack" style="gap:8px;border-top:1px solid var(--line);padding-top:12px"><span class="small">Sesión: <b>${esc(AR.email())}</b></span><span class="muted small">Versión 1111-0126</span><button class="btn ghost sm" type="button" id="cu-out">Cerrar sesión</button></div>`;
+   <div class="stack" style="gap:8px;border-top:1px solid var(--line);padding-top:12px"><span class="small">Sesión: <b>${esc(AR.email())}</b></span><span class="muted small">Versión 1111-0259</span><button class="btn ghost sm" type="button" id="cu-out">Cerrar sesión</button></div>`;
   const on=$('#cu-on');if(on)on.onclick=async()=>{on.disabled=true;on.textContent='Activando… (si sale un aviso, dale Permitir)';let msg='';
     try{await AR.push.activar();toast('Notificaciones activadas');AR.push.prueba().catch(()=>{})}
     catch(e){const m=e&&e.message||'';msg=m==='permiso'?'No se dio permiso. En la Mac: Ajustes del Sistema → Notificaciones → AgroRuta Equipo → Permitir. En iPhone: Ajustes → Notificaciones → AR Equipo.':m==='permiso-tiempo'?'No contestaste el aviso de permiso. Búscalo arriba a la derecha de la pantalla o revisa Ajustes del Sistema → Notificaciones.':m==='suscribir'?'El navegador no respondió al registrar el aparato. Cierra la app, ábrela otra vez e intenta de nuevo.':m==='guardar'?'No se pudo guardar en la nube. Revisa tu señal e intenta otra vez.':'No se pudieron activar: '+m}
@@ -1344,19 +1372,282 @@ async function renderCuenta(){
   $('#cu-out').onclick=()=>{const b=$('#cu-out');b.outerHTML=`<div class="flow"><button class="btn ghost sm" type="button" onclick="renderCuenta()">No</button><button class="btn sm" type="button" id="cu-out2" style="background:var(--danger);color:var(--on-danger)">Sí, cerrar sesión</button></div>`;$('#cu-out2').onclick=()=>AR.logout()};
 }
 function abrirPendiente(){if(window.AR&&AR.abrir){const id=AR.abrir,o=orders.find(x=>x.id===id);if(o){AR.abrir=null;if(view!=='tecnico')location.hash='tecnico';setTimeout(()=>openOrder(id),80)}}}
-document.addEventListener('ar-abrir',abrirPendiente);document.addEventListener('ar-estado',()=>{if(view==='tecnico')renderTecnico()});
+document.addEventListener('ar-abrir',abrirPendiente);
+$('#cl-nuevo').onclick=nuevoCliente;
+$('#cl-q').oninput=e=>{cliQ=e.target.value;$('#cl-clear').hidden=!cliQ;renderClientes()};
+$('#cl-clear').onclick=()=>{cliQ='';$('#cl-q').value='';$('#cl-clear').hidden=true;renderClientes()};document.addEventListener('ar-estado',()=>{if(view==='tecnico')renderTecnico()});
+
+/* ---------- clientes (fichas con sus máquinas) ---------- */
+let clientes=[],clientesLive=false,ordersLive=false,cliCfg=null,cliCfgLive=false,migrando=false;
+try{clientes=JSON.parse(localStorage.getItem('eq_clientes')||'[]')}catch(e){}
+const tel10=p=>String(p||'').replace(/\D/g,'').slice(-10);
+const normM=s=>String(s||'').trim().toLowerCase().replace(/\s+/g,' ');
+const newMid=()=>'M-'+Date.now().toString(36).toUpperCase()+Math.random().toString(36).slice(2,5).toUpperCase();
+function saveClientesLocal(){try{localStorage.setItem('eq_clientes',JSON.stringify(clientes))}catch(e){}}
+async function saveCliente(c,silencio){
+  c.updated=new Date().toISOString();if(!c.created)c.created=c.updated;
+  const prev=clientes.slice(),i=clientes.findIndex(x=>x.id===c.id);if(i>=0)clientes[i]=c;else clientes.unshift(c);
+  if(mode==='db'&&canWrite){try{const {id,...rest}=c;await db.collection('clientes').doc(id).set(rest);return true}catch(e){clientes=prev;if(!silencio)toast('No se pudo guardar el cliente. Revisa tu señal.');return false}}
+  saveClientesLocal();return true;
+}
+async function deleteCliente(id){
+  const prev=clientes.slice();clientes=clientes.filter(x=>x.id!==id);
+  if(mode==='db'&&canWrite){try{await db.collection('clientes').doc(id).delete();return true}catch(e){clientes=prev;toast('No se pudo borrar');return false}}
+  saveClientesLocal();return true;
+}
+const fichaDeTel=t=>t?clientes.find(c=>c.tel===t):null;
+function maqMatch(m,o){
+  if(o.maquinaId&&o.maquinaId===m.id)return true;
+  if(m.serie&&o.serie)return normM(m.serie)===normM(o.serie);
+  return m.machine===o.machine&&normM(m.model)===normM(o.model);
+}
+const ordenesDe=c=>orders.filter(o=>o.clienteId===c.id||(c.tel&&tel10(o.phone)===c.tel));
+const ordenesMaq=(c,m)=>ordenesDe(c).filter(o=>maqMatch(m,o)).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+function fichaDesdeOrden(o,base){
+  const t=tel10(o.phone);if(t.length<10)return null;
+  const c=base?JSON.parse(JSON.stringify(base)):{id:clientes.some(x=>x.id==='C-'+t)?'C-'+t+'-'+Date.now().toString(36):'C-'+t,nombre:String(o.name||'').trim(),tel:t,phone:String(o.phone||'').trim(),muni:o.muni||'',lugar:String(o.place||'').trim(),notas:'',maquinas:[]};
+  if(!c.nombre&&o.name)c.nombre=String(o.name).trim();if(!c.muni&&o.muni)c.muni=o.muni;if(!c.lugar&&o.place)c.lugar=String(o.place).trim();
+  c.maquinas=c.maquinas||[];
+  if(o.machine){
+    let m=c.maquinas.find(x=>maqMatch(x,o));
+    if(!m){m={id:o.maquinaId||newMid(),machine:o.machine,brand:o.brand||'',hp:o.hp||null,model:String(o.model||'').trim(),serie:String(o.serie||'').trim(),horas:o.hours?String(o.hours):'',week:Number(o.week)||0};c.maquinas.push(m)}
+    else{const h=Math.max(Number(m.horas)||0,Number(o.hours)||0,o.estado==='terminada'?Number(o.interval)||0:0);if(h)m.horas=String(h);if(!m.serie&&o.serie)m.serie=String(o.serie).trim();if(Number(o.week)>0)m.week=Number(o.week);if(!m.brand&&o.brand)m.brand=o.brand}
+  }
+  return c;
+}
+async function asegurarFicha(o){
+  try{const t=tel10(o.phone);if(t.length<10)return;const base=fichaDeTel(t)||(o.clienteId&&clientes.find(c=>c.id===o.clienteId));const c=fichaDesdeOrden(o,base);if(!c)return;
+    if(base&&JSON.stringify(base)===JSON.stringify(Object.assign({},c,{updated:base.updated,created:base.created})))return;
+    await saveCliente(c,true);if(view==='clientes')renderClientes()}catch(e){}
+}
+async function migrarClientes(){
+  if(migrando||mode!=='db'||!ordersLive||!clientesLive||!cliCfgLive||(cliCfg&&cliCfg.migrado))return;migrando=true;
+  try{const map={};clientes.forEach(c=>map[c.tel]=JSON.parse(JSON.stringify(c)));
+    orders.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||'')).forEach(o=>{const t=tel10(o.phone);if(t.length<10)return;map[t]=fichaDesdeOrden(o,map[t])});
+    for(const c of Object.values(map)){const old=clientes.find(x=>x.id===c.id);if(!old||JSON.stringify(old.maquinas)!==JSON.stringify(c.maquinas))await saveCliente(c,true)}
+    await db.doc('config/clientes').set({migrado:true,en:new Date().toISOString()});cliCfg={migrado:true};
+    if(view==='clientes')renderClientes();
+  }catch(e){}finally{migrando=false}
+}
+
+/* vista Clientes */
+let cliQ='',fichaId=null,cliEdit=null;
+function vendidoDe(c){return ordenesDe(c).filter(o=>o.estado==='terminada').reduce((a,o)=>a+cobroOf(o),0)}
+function maqNombre(m){const mm=mach(m.machine);const b=m.brand&&BRANDS[m.brand]&&!['otra','potra'].includes(m.brand)?BRANDS[m.brand].n.replace(/ \(.*\)| y similares.*$/,''):'';return[(mm?mm.n:'Máquina'),m.model||b].filter(Boolean).join(' · ')}
+function municipiosHTML(){
+  const g={};clientes.forEach(c=>{const k=c.muni||'Sin municipio';g[k]=g[k]||{n:0,v:0};g[k].n++;g[k].v+=vendidoDe(c)});
+  const L=Object.entries(g).sort((a,b)=>b[1].n-a[1].n||b[1].v-a[1].v);if(!L.length)return'';const mx=Math.max(...L.map(x=>x[1].n));
+  return`<details class="card"${clientes.length&&clientes.length<=40?'':''}><summary style="cursor:pointer;font-weight:700">Clientes por municipio (${L.length})</summary><div class="stack" style="gap:10px;margin-top:12px">
+   ${L.map(([k,x])=>`<div class="mbar"><div class="mrow"><b>${esc(k)}</b><span>${x.n} cliente${x.n===1?'':'s'} · ${money(x.v)}</span></div><div class="mtrack"><i style="width:${Math.max(4,x.n/mx*100).toFixed(0)}%"></i></div></div>`).join('')}
+   <p class="muted small">Vendido = servicios terminados de esos clientes.</p></div></details>`;
+}
+function renderClientes(){
+  const B=$('#cl-body');if(!B)return;const q=cliQ.trim().toLowerCase();
+  const L=clientes.map(c=>{const os=ordenesDe(c);const ult=os.map(o=>o.date||'').sort().pop()||'';return{c,os,ult,n:os.filter(o=>o.estado==='terminada').length}})
+    .filter(x=>!q||`${x.c.nombre} ${x.c.tel} ${x.c.phone||''} ${x.c.muni} ${x.c.lugar} ${(x.c.maquinas||[]).map(m=>m.model+' '+m.serie).join(' ')}`.toLowerCase().includes(q))
+    .sort((a,b)=>(b.ult||'').localeCompare(a.ult||'')||String(a.c.nombre).localeCompare(String(b.c.nombre)));
+  B.innerHTML=`${municipiosHTML()}
+   ${L.length?L.map(({c,ult,n})=>`<button type="button" class="order" data-cf="${esc(c.id)}"><div class="r1"><b>${esc(c.nombre||'Sin nombre')}</b><span class="pill st-terminada">${n} servicio${n===1?'':'s'}</span></div>
+     <div class="small">${(c.maquinas||[]).length?esc((c.maquinas||[]).map(maqNombre).join(', ')):'<span class="muted">Sin máquinas registradas</span>'}</div>
+     <div class="r2"><span>${esc(c.muni||'')}${c.tel?' · '+esc(c.tel.replace(/(\d{2})(\d{4})(\d{4})/,'$1 $2 $3')):''}${ult?' · último: '+esc(fmtDate(ult)):''}</span><span style="font-variant-numeric:tabular-nums">${money(vendidoDe(c))}</span></div></button>`).join('')
+     :`<div class="empty">${clientes.length?'No hay clientes con esa búsqueda.':(mode==='db'&&!clientesLive?'Cargando clientes…':'Todavía no hay clientes. Se agregan solos cuando registran órdenes, o dalos de alta con “+ Nuevo cliente”.')}</div>`}`;
+  B.querySelectorAll('[data-cf]').forEach(b=>b.onclick=()=>abrirFicha(b.dataset.cf));
+}
+function abrirFicha(id,editar){openId=null;fichaId=id;cliEdit=editar?'datos':null;renderFicha()}
+function nuevoCliente(){fichaId='__nuevo';cliEdit='datos';openId=null;renderFicha()}
+function fichaFormHTML(c){return`<div class="card stack" id="cf-form"><h3>${c.id?'Editar datos':'Nuevo cliente'}</h3>
+   <label class="f">Nombre<input type="text" id="cf-nombre" value="${esc(c.nombre||'')}"></label>
+   <label class="f">Teléfono o WhatsApp <span class="h">10 dígitos. Con esto se reconoce al cliente</span><input type="tel" inputmode="tel" id="cf-tel" value="${esc(c.phone||c.tel||'')}"></label>
+   <label class="f">Municipio<select id="cf-muni"><option value="">Elige el municipio…</option>${MUNIS.map(([n])=>`<option ${c.muni===n?'selected':''}>${esc(n)}</option>`).join('')}</select></label>
+   <label class="f">Referencia del lugar <span class="h">Rancho, ejido, carretera o liga de Google Maps</span><input type="text" id="cf-lugar" value="${esc(c.lugar||'')}"></label>
+   <label class="f">Notas <span class="h">Opcional. Ej. paga en efectivo, perro bravo, llamar antes</span><textarea id="cf-notas">${esc(c.notas||'')}</textarea></label>
+   <p class="err" id="cf-err" hidden></p>
+   <div class="flow"><button class="btn ghost sm" type="button" id="cf-cancel">Cancelar</button><button class="btn green sm" type="button" id="cf-save">Guardar</button></div></div>`}
+function maqFormHTML(m){const tipo=m.machine||'tractor',br=brandsFor(tipo),z=SIZES[tipo];
+  return`<div class="card stack" id="mf2"><h3>${m.id?'Editar máquina':'Agregar máquina'}</h3>
+   <label class="f">Tipo<select id="m2-tipo">${MACHINES.map(x=>`<option value="${x.id}" ${tipo===x.id?'selected':''}>${esc(x.n)}</option>`).join('')}</select></label>
+   ${br.length?`<label class="f">Marca<select id="m2-brand">${br.map(([k,v])=>`<option value="${k}" ${m.brand===k?'selected':''}>${esc(v.n)}</option>`).join('')}</select></label>`:''}
+   ${z?`<label class="f">Tamaño<select id="m2-hp">${z.map(x=>`<option value="${x.id}" ${(m.hp||sizeOf({machine:tipo,hp:m.hp}).id)===x.id?'selected':''}>${esc(x.n)} · ${esc(x.r)}</option>`).join('')}</select></label>`:''}
+   <label class="f">Modelo <span class="h">Ej. ${esc(MODEL_EJ[tipo]||'')}</span><input type="text" id="m2-model" value="${esc(m.model||'')}"></label>
+   <label class="f">Número de serie <span class="h">Opcional</span><input type="text" id="m2-serie" value="${esc(m.serie||'')}" autocapitalize="characters"></label>
+   <label class="f">${tipo==='camioneta'?'Kilometraje':'Horas del horómetro'} <span class="h">Opcional</span><input type="number" inputmode="numeric" id="m2-horas" value="${esc(m.horas||'')}"></label>
+   <div class="flow"><button class="btn ghost sm" type="button" id="m2-cancel">Cancelar</button><button class="btn green sm" type="button" id="m2-save">Guardar máquina</button></div></div>`}
+function renderFicha(){
+  const nuevo=fichaId==='__nuevo';const c=nuevo?{nombre:'',tel:'',muni:'',lugar:'',notas:'',maquinas:[]}:clientes.find(x=>x.id===fichaId);
+  if(!c){closeSheet();return}
+  const telFmt=c.tel?c.tel.replace(/(\d{2})(\d{4})(\d{4})/,'$1 $2 $3'):'';
+  const maqHTML=(c.maquinas||[]).map(m=>{
+    if(cliEdit==='m:'+m.id)return maqFormHTML(m);
+    const os=ordenesMaq(c,m),hechas=os.filter(o=>o.estado==='terminada'),ult=hechas[0];
+    const di=hasHours(m.machine)||ult?dueInfo(Object.assign({},m,{hours:m.horas,interval:ult&&ult.interval}),ult?doneAt(ult):null):null;
+    return`<div class="card stack" style="gap:8px"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div><b>${esc(maqNombre(m))}</b><br><span class="muted small">${[m.serie?'Serie '+esc(m.serie):'',m.horas?Number(m.horas).toLocaleString('es-MX')+(m.machine==='camioneta'?' km':' h'):''].filter(Boolean).join(' · ')||'Sin serie ni horas'}</span></div>${ult?`<span class="pill st-terminada">Último: ${esc(fmtDate(ult.date))}</span>`:''}</div>
+     ${di&&ult?`<span class="small">Siguiente: <b>${esc(dueTitle(Object.assign({},m,{model:m.model}),di).replace(/ – .*$/,''))}</b> · aprox. ${di.date.toLocaleDateString('es-MX',{day:'numeric',month:'short'})}</span>`:''}
+     ${os.length?`<details><summary style="cursor:pointer;font-weight:700">Historial (${os.length})</summary><div class="stack" style="gap:6px;margin-top:8px">${os.map(o=>`<button type="button" class="ag-o st-${o.estado}" data-oo="${esc(o.id)}"><b>${esc(fmtDate(o.date))}</b><span class="pill st-${o.estado}">${o.estado==='terminada'?(o.pagado?'Pagado':'Por cobrar'):esc(stName(o.estado))}</span><span class="s">${(o.services||[]).filter(x=>x!=='revision').map(x=>esc((svc(x)||{n:x}).n)).join(', ')} · ${money(o.total||0)}</span></button>`).join('')}</div></details>`:'<span class="muted small">Sin servicios todavía.</span>'}
+     <div class="flow"><button class="btn primary sm" type="button" data-mo="${esc(m.id)}">Nueva orden</button><button class="btn ghost sm" type="button" data-me="${esc(m.id)}">Editar</button></div>
+     <button class="btn ghost sm" type="button" data-md="${esc(m.id)}" style="color:var(--danger)">Quitar máquina</button></div>`}).join('');
+  openSheet(`<div class="stack"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="muted">${nuevo?'Cliente nuevo':'Ficha del cliente'}</span><button class="btn ghost sm" type="button" id="cf-x">Cerrar</button></div>
+   ${cliEdit==='datos'?fichaFormHTML(nuevo?{}:c):`<h2>${esc(c.nombre||'Sin nombre')}</h2>
+   <div class="card"><dl class="kv"><dt>Teléfono</dt><dd><b style="font-variant-numeric:tabular-nums">${esc(telFmt)}</b></dd><dt>Dónde</dt><dd>${esc(c.muni||'')}${c.lugar?' · '+esc(c.lugar):''}</dd>${c.notas?`<dt>Notas</dt><dd>${esc(c.notas)}</dd>`:''}<dt>Servicios</dt><dd>${ordenesDe(c).filter(o=>o.estado==='terminada').length} · ${money(vendidoDe(c))}</dd></dl></div>
+   <div class="flow"><a class="btn green sm" href="${waLink('Hola '+String(c.nombre||'').split(' ')[0]+', somos AgroRuta Móvil.',c.tel)}" target="_blank" rel="noopener">WhatsApp</a><a class="btn ghost sm" href="tel:${esc(c.tel)}">Llamar</a></div>
+   <div class="flow"><button class="btn primary sm" type="button" id="cf-orden">Nueva orden</button><button class="btn ghost sm" type="button" id="cf-edit">Editar datos</button></div>`}
+   ${nuevo?'':`<h3>Máquinas (${(c.maquinas||[]).length})</h3>${maqHTML||'<p class="muted small">Todavía no tiene máquinas registradas.</p>'}
+   ${cliEdit==='m:nueva'?maqFormHTML({}):`<button class="btn ghost block" type="button" id="cf-addm">+ Agregar máquina</button>`}
+   <button class="btn ghost block" type="button" id="cf-del" style="color:var(--danger)">Borrar cliente</button>`}</div>`);
+  const P=$('#sheet-panel');
+  $('#cf-x').onclick=()=>{fichaId=null;cliEdit=null;closeSheet()};
+  const e=$('#cf-edit');if(e)e.onclick=()=>{cliEdit='datos';renderFicha()};
+  const co=$('#cf-orden');if(co)co.onclick=()=>ordenPara(c,null);
+  const cc=$('#cf-cancel');if(cc)cc.onclick=()=>{if(nuevo){fichaId=null;closeSheet()}else{cliEdit=null;renderFicha()}};
+  const cs=$('#cf-save');if(cs)cs.onclick=async()=>{
+    const nombre=$('#cf-nombre').value.trim(),ph=$('#cf-tel').value.trim(),t=tel10(ph),er=$('#cf-err');
+    if(nombre.length<2){er.textContent='Escribe el nombre.';er.hidden=false;return}
+    if(t.length<10){er.textContent='Escribe un teléfono de 10 dígitos.';er.hidden=false;return}
+    const otro=clientes.find(x=>x.tel===t&&x.id!==c.id);if(otro){er.innerHTML=`Ese teléfono ya es de <b>${esc(otro.nombre)}</b>. <button class="btn ghost sm" type="button" id="cf-ir">Abrir su ficha</button>`;er.hidden=false;$('#cf-ir').onclick=()=>abrirFicha(otro.id);return}
+    const nc=Object.assign(JSON.parse(JSON.stringify(nuevo?{maquinas:[]}:c)),{nombre,tel:t,phone:ph,muni:$('#cf-muni').value,lugar:$('#cf-lugar').value.trim(),notas:$('#cf-notas').value.trim()});
+    if(nuevo)nc.id=clientes.some(x=>x.id==='C-'+t)?'C-'+t+'-'+Date.now().toString(36):'C-'+t;cs.disabled=true;
+    if(await saveCliente(nc)){toast(nuevo?'Cliente agregado':'Datos guardados');fichaId=nc.id;cliEdit=nuevo?'m:nueva':null;renderFicha();if(view==='clientes')renderClientes()}else cs.disabled=false};
+  const am=$('#cf-addm');if(am)am.onclick=()=>{cliEdit='m:nueva';renderFicha();setTimeout(()=>{const f=$('#mf2');if(f)f.scrollIntoView({block:'start'})},50)};
+  const mf=$('#mf2');if(mf){
+    const mid=cliEdit.slice(2),old=(c.maquinas||[]).find(x=>x.id===mid)||{};
+    $('#m2-tipo').onchange=()=>{const cur={id:old.id,machine:$('#m2-tipo').value,model:$('#m2-model').value,serie:$('#m2-serie').value,horas:$('#m2-horas').value};mf.outerHTML=maqFormHTML(cur);renderFichaBindMaq(c,old)};
+    renderFichaBindMaq(c,old);
+  }
+  P.querySelectorAll('[data-me]').forEach(b=>b.onclick=()=>{cliEdit='m:'+b.dataset.me;renderFicha()});
+  P.querySelectorAll('[data-mo]').forEach(b=>b.onclick=()=>ordenPara(c,(c.maquinas||[]).find(x=>x.id===b.dataset.mo)));
+  P.querySelectorAll('[data-oo]').forEach(b=>b.onclick=()=>{fichaId=null;openOrder(b.dataset.oo)});
+  P.querySelectorAll('[data-md]').forEach(b=>b.onclick=()=>{b.outerHTML=`<div class="flow"><button class="btn ghost sm" type="button" id="md2-no">No</button><button class="btn sm" type="button" id="md2-si" style="background:var(--danger);color:var(--on-danger)">Sí, quitar</button></div>`;
+    $('#md2-no').onclick=renderFicha;$('#md2-si').onclick=async()=>{const nc=JSON.parse(JSON.stringify(c));nc.maquinas=nc.maquinas.filter(x=>x.id!==b.dataset.md);if(await saveCliente(nc)){toast('Máquina quitada');renderFicha()}}});
+  const del=$('#cf-del');if(del)del.onclick=()=>{del.outerHTML=`<div class="card stack"><b>¿Borrar a ${esc(c.nombre)}?</b><p class="muted small">Se borra su ficha y sus máquinas. Sus órdenes se quedan en el panel.</p><div class="flow"><button class="btn ghost sm" type="button" id="cd-no">No</button><button class="btn sm" type="button" id="cd-si" style="background:var(--danger);color:var(--on-danger)">Sí, borrar</button></div></div>`;
+    $('#cd-no').onclick=renderFicha;$('#cd-si').onclick=async()=>{if(await deleteCliente(c.id)){toast('Cliente borrado');fichaId=null;closeSheet();if(view==='clientes')renderClientes()}}};
+}
+function renderFichaBindMaq(c,old){
+  $('#m2-tipo').onchange=()=>{const cur={id:old.id,machine:$('#m2-tipo').value,model:$('#m2-model').value,serie:$('#m2-serie').value,horas:$('#m2-horas').value};$('#mf2').outerHTML=maqFormHTML(cur);renderFichaBindMaq(c,old)};
+  $('#m2-cancel').onclick=()=>{cliEdit=null;renderFicha()};
+  $('#m2-save').onclick=async()=>{
+    const tipo=$('#m2-tipo').value,m={id:old.id||newMid(),machine:tipo,brand:$('#m2-brand')?$('#m2-brand').value:'',hp:$('#m2-hp')?$('#m2-hp').value:null,model:$('#m2-model').value.trim(),serie:$('#m2-serie').value.trim(),horas:$('#m2-horas').value,week:old.week||0};
+    const nc=JSON.parse(JSON.stringify(c));nc.maquinas=nc.maquinas||[];const i=nc.maquinas.findIndex(x=>x.id===m.id);if(i>=0)nc.maquinas[i]=m;else nc.maquinas.push(m);
+    if(m.serie&&nc.maquinas.some(x=>x.id!==m.id&&normM(x.serie)===normM(m.serie))){toast('Ya hay otra máquina con ese número de serie');return}
+    if(await saveCliente(nc)){toast('Máquina guardada');cliEdit=null;renderFicha()}};
+}
+function ordenPara(c,m){
+  const keepF=!lastFolio&&draft.date?{date:draft.date,slot:draft.slot}:{};
+  draft=Object.assign(blankDraft(),keepF,{name:c.nombre||'',phone:c.phone||c.tel||'',muni:c.muni||'',place:c.lugar||'',clienteId:c.id});
+  step=0;
+  if(m){Object.assign(draft,{machine:m.machine,brand:m.brand||brandKey({machine:m.machine}),model:m.model||'',serie:m.serie||'',hours:m.horas||'',week:m.week||'',maquinaId:m.id});
+    if(m.hp)draft.hp=m.hp;draft.brand=brandKey(draft);if(SIZES[m.machine]&&!SIZES[m.machine].find(x=>x.id===draft.hp))draft.hp=sizeOf(draft).id;
+    if(hasHours(m.machine)&&Number(m.horas)>0)applyInterval(intervalFor(m.horas));step=1}
+  lastFolio=null;fichaId=null;closeSheet();if(location.hash==='#pedir')renderPedir();else location.hash='pedir';toast('Nueva orden para '+(c.nombre||'el cliente'));
+}
+/* buscar cliente al iniciar Nueva orden */
+function buscarClienteHTML(){
+  const c=draft.clienteId&&clientes.find(x=>x.id===draft.clienteId);
+  return`<a class="btn ghost block" href="#cotizar" style="min-height:46px">Solo cotizar (sin hacer orden) →</a>
+  <div class="card stack" style="gap:10px">${c?`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span>Cliente: <b>${esc(c.nombre)}</b> · ${esc(c.tel)}</span><button class="btn ghost sm" type="button" id="bc-quitar">Quitar</button></div>
+    ${(c.maquinas||[]).length?`<b>Sus máquinas</b><div class="stack" style="gap:8px">${c.maquinas.map(m=>`<button type="button" class="btn ghost block" data-bcm="${esc(m.id)}" style="justify-content:flex-start">${esc(maqNombre(m))}${m.serie?' · serie '+esc(m.serie):''}</button>`).join('')}</div><p class="muted small">O elige otra máquina abajo.</p>`:'<p class="muted small">No tiene máquinas registradas. Elige el tipo abajo.</p>'}`
+    :`<b>¿Es un cliente registrado?</b><input type="text" id="bc-q" placeholder="Busca por nombre o teléfono" autocomplete="off"><div id="bc-res" class="stack" style="gap:6px"></div>`}</div>`;
+}
+function bindBuscarCliente(){
+  const q=$('#bc-q');if(q){q.oninput=()=>{const t=q.value.trim().toLowerCase(),R=$('#bc-res');if(t.length<2){R.innerHTML='';return}
+    const L=clientes.filter(c=>`${c.nombre} ${c.tel} ${c.phone||''}`.toLowerCase().includes(t)||(t.replace(/\D/g,'').length>=3&&c.tel.includes(t.replace(/\D/g,'')))).slice(0,6);
+    R.innerHTML=L.length?L.map(c=>`<button type="button" class="ag-o" data-bc="${esc(c.id)}"><b>${esc(c.nombre)}</b><span class="muted small">${esc(c.tel)}</span><span class="s">${esc(c.muni||'')}${(c.maquinas||[]).length?' · '+esc(c.maquinas.map(maqNombre).join(', ')):''}</span></button>`).join(''):'<p class="muted small">No hay ningún cliente con eso. Sigue y se registra solo al guardar la orden.</p>';
+    R.querySelectorAll('[data-bc]').forEach(b=>b.onclick=()=>{const c=clientes.find(x=>x.id===b.dataset.bc);if(!c)return;Object.assign(draft,{name:c.nombre||'',phone:c.phone||c.tel||'',muni:c.muni||'',place:c.lugar||'',clienteId:c.id});if(c.maquinas&&c.maquinas.length===1){ordenPara(c,c.maquinas[0]);return}renderPedir()})}}
+  const qu=$('#bc-quitar');if(qu)qu.onclick=()=>{Object.assign(draft,{name:'',phone:'',muni:'',place:'',clienteId:'',maquinaId:'',serie:''});renderPedir()};
+  document.querySelectorAll('[data-bcm]').forEach(b=>b.onclick=()=>{const c=clientes.find(x=>x.id===draft.clienteId);if(c)ordenPara(c,(c.maquinas||[]).find(x=>x.id===b.dataset.bcm))});
+}
+
+/* ---------- hora estimada de llegada ---------- */
+function minutosViaje(o){const mu=MUNIS.find(x=>x[0]===o.muni);const z=mu?ZONES[mu[1]]:null;const min=z?(z.km/2)/VEL*60+10:45;return Math.max(15,Math.ceil(min/5)*5)}
+const horaTxt=d=>new Date(d).toLocaleTimeString('es-MX',{hour:'numeric',minute:'2-digit'});
+function salirARuta(o){
+  openId=null;renderOrder.last=null;
+  let lleg=new Date(Date.now()+minutosViaje(o)*60000);lleg.setSeconds(0,0);
+  const pintar=()=>{openSheet(`<div class="stack"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2>Salir a ruta</h2><button class="btn ghost sm" type="button" onclick="closeSheet()">Cancelar</button></div>
+    <p>${esc(o.name)} · ${esc(o.muni)}${o.place?' · '+esc(o.place):''}</p>
+    <div class="card stack" style="align-items:center;text-align:center;gap:6px"><span class="muted">Llegada aproximada</span><b style="font:800 44px/1 var(--f-display);font-variant-numeric:tabular-nums" id="sr-h">${esc(horaTxt(lleg))}</b><span class="muted small">Calculada por la distancia a ${esc(o.muni||'su municipio')}. Ajústala si hace falta.</span>
+    <div class="flow" style="width:100%"><button class="btn ghost" type="button" id="sr-m">− 15 min</button><button class="btn ghost" type="button" id="sr-p">+ 15 min</button></div></div>
+    <button class="btn primary block" type="button" id="sr-ok">Salir a ruta</button>
+    <p class="muted small">El cliente ve la hora en su app. También le puedes mandar el aviso por WhatsApp.</p></div>`);
+    $('#sr-m').onclick=()=>{if(lleg-Date.now()>15*60000){lleg=new Date(lleg-15*60000);$('#sr-h').textContent=horaTxt(lleg)}};
+    $('#sr-p').onclick=()=>{lleg=new Date(+lleg+15*60000);$('#sr-h').textContent=horaTxt(lleg)};
+    $('#sr-ok').onclick=async()=>{const b=$('#sr-ok');b.disabled=true;const pt={estado:'camino',salioEn:new Date().toISOString(),llegada:lleg.toISOString()};
+      if(await patchOrder(o.id,pt)){const oo=Object.assign({},o,pt);openId=null;openSheet(`<div class="stack"><h2>¡En camino!</h2><p>Llegada aprox. <b>${esc(horaTxt(lleg))}</b><br>${esc(o.name)} ya lo ve en su app.</p>
+        <a class="btn green block" href="${waLink(clientMsg(oo),o.phone)}" target="_blank" rel="noopener">Avisar por WhatsApp</a>
+        <a class="btn ghost block" href="https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=${encodeURIComponent(stopOf(o))}" target="_blank" rel="noopener">Abrir ruta en Maps</a>
+        <button class="btn ghost block" type="button" onclick="closeSheet()">Listo</button></div>`)}else b.disabled=false};
+  };pintar();
+}
+
+/* ---------- nota de servicio ---------- */
+function notaServicio(o){
+  const m=mach(o.machine),di=dueInfo(o,doneAt(o)),c=clientes.find(x=>x.tel===tel10(o.phone));
+  const mq=c&&(c.maquinas||[]).find(x=>maqMatch(x,o));const serie=o.serie||(mq&&mq.serie)||'';
+  const h=Math.max(Number(o.hours)||0,Number(o.interval)||0);
+  const trab=(o.services||[]).filter(x=>x!=='revision').map(x=>{if(x==='afinacion')return'Afinación completa ('+afinDesc(o).toLowerCase()+')';return(svc(x)||{n:x}).n});
+  let t=`*AgroRuta Móvil – Nota de servicio*\nFolio: ${o.id}\nFecha: ${fmtDate(o.terminadaEn?isoD(o.terminadaEn):o.date)}\nCliente: ${o.name}\n`;
+  t+=`Máquina: ${m?m.n:''}${o.model?' '+o.model:''}${serie?' · serie '+serie:''}${h?' · '+h.toLocaleString('es-MX')+(o.machine==='camioneta'?' km':' h'):''}\n`;
+  if(o.interval)t+=`Servicio de ${Number(o.interval).toLocaleString('es-MX')} horas\n`;
+  t+=`\n*Trabajos realizados*\n${trab.map(x=>'✔ '+x).join('\n')}\n✔ Inspección de 20 puntos\n`;
+  (o.extras||[]).forEach(x=>t+=`✔ ${x.n} (${money(x.p)})\n`);
+  t+=`\n*Total: ${money(o.pagado?(o.cobrado??o.total):(o.total||0))}*${o.pagado?' · pagado'+(o.metodo?' en '+o.metodo.toLowerCase():''):' · pendiente de pago'}\n`;
+  if(o.tecnico)t+=`Técnico: ${o.tecnico}\n`;
+  if(o.techNotes)t+=`Observaciones: ${o.techNotes}\n`;
+  t+=`\n*Siguiente servicio:* ${dueTitle(o,di).replace(/ – .*$/,'')} · aprox. ${di.date.toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'})}\n`;
+  if((o.fotos||[]).length)t+=`Te mandamos ${o.fotos.length} foto${o.fotos.length===1?'':'s'} del servicio.\n`;
+  t+=`\nGuarda este servicio en tu app y te avisamos cuando toque el siguiente: ${APP_URL}?s=${encodeService(o)}\n\n¡Gracias por confiar en AgroRuta Móvil!`;
+  return t;
+}
+
+/* ---------- respaldo en Excel (.xlsx sin librerías) ---------- */
+const CRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function crc32(u){let c=0xFFFFFFFF;for(let i=0;i<u.length;i++)c=CRC[(c^u[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0}
+function zipStore(files){const te=new TextEncoder(),parts=[],cen=[];let off=0;
+  const u16=n=>[n&255,(n>>>8)&255],u32=n=>[n&255,(n>>>8)&255,(n>>>16)&255,(n>>>24)&255];
+  files.forEach(f=>{const name=te.encode(f.name),data=te.encode(f.data),crc=crc32(data);
+    const loc=new Uint8Array([...u32(0x04034b50),...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0x21),...u32(crc),...u32(data.length),...u32(data.length),...u16(name.length),...u16(0)]);
+    parts.push(loc,name,data);
+    cen.push(new Uint8Array([...u32(0x02014b50),...u16(20),...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0x21),...u32(crc),...u32(data.length),...u32(data.length),...u16(name.length),...u16(0),...u16(0),...u16(0),...u16(0),...u32(0),...u32(off)]),name);
+    off+=loc.length+name.length+data.length});
+  const cenLen=cen.reduce((a,x)=>a+x.length,0);
+  const end=new Uint8Array([...u32(0x06054b50),...u16(0),...u16(0),...u16(files.length),...u16(files.length),...u32(cenLen),...u32(off),...u16(0)]);
+  return new Blob([...parts,...cen,end],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'})}
+function xlsx(sheets){
+  const x=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'');
+  const col=n=>{let s='';n++;while(n>0){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26)}return s};
+  const sheetXML=rows=>`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${rows.map((r,i)=>`<row r="${i+1}">${r.map((v,j)=>{const ref=col(j)+(i+1);return typeof v==='number'&&isFinite(v)?`<c r="${ref}"${i===0?' s="1"':''}><v>${v}</v></c>`:`<c r="${ref}" t="inlineStr"${i===0?' s="1"':''}><is><t xml:space="preserve">${x(v)}</t></is></c>`}).join('')}</row>`).join('')}</sheetData></worksheet>`;
+  const files=[
+    {name:'[Content_Types].xml',data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheets.map((s,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}</Types>`},
+    {name:'_rels/.rels',data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`},
+    {name:'xl/workbook.xml',data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets.map((s,i)=>`<sheet name="${x(s.name)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('')}</sheets></workbook>`},
+    {name:'xl/_rels/workbook.xml.rels',data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((s,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('')}<Relationship Id="rId${sheets.length+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`},
+    {name:'xl/styles.xml',data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`},
+    ...sheets.map((s,i)=>({name:`xl/worksheets/sheet${i+1}.xml`,data:sheetXML(s.rows)}))];
+  return zipStore(files);
+}
+function respaldoExcel(){
+  const svcs=o=>(o.services||[]).filter(x=>x!=='revision').map(x=>(svc(x)||{n:x}).n).join(', ');
+  const num=v=>{const n=Number(v);return v===''||v==null||!isFinite(n)?'':n};
+  const O=[['Folio','Fecha','Horario','Estado','Cliente','Teléfono','Municipio','Lugar','Máquina','Marca','Modelo','Serie','Horas/km','Servicios','Total','Costo estimado','Cobrado','Pagado','Método','Técnico','Origen','Registrada']]
+    .concat(orders.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||'')).map(o=>[o.id,o.date||'',o.slot||'',stName(o.estado),o.name||'',o.phone||'',o.muni||'',o.place||'',(mach(o.machine)||{}).n||'',(BRANDS[o.brand]||{}).n||'',o.model||'',o.serie||'',num(o.hours),svcs(o),num(o.total),num(costoOf(o)),o.pagado?num(o.cobrado??o.total):'',o.pagado?'Sí':'No',o.metodo||'',o.tecnico||'',o.origen||'',String(o.created||'').slice(0,10)]));
+  const C=[['Nombre','Teléfono','Municipio','Lugar','Notas','Máquinas','Servicios terminados','Vendido']].concat(clientes.map(c=>[c.nombre||'',c.tel||'',c.muni||'',c.lugar||'',c.notas||'',(c.maquinas||[]).length,ordenesDe(c).filter(o=>o.estado==='terminada').length,vendidoDe(c)]));
+  const M=[['Cliente','Teléfono','Tipo','Marca','Modelo','Serie','Horas/km','Último servicio']];clientes.forEach(c=>(c.maquinas||[]).forEach(m=>{const u=ordenesMaq(c,m).find(o=>o.estado==='terminada');M.push([c.nombre||'',c.tel||'',(mach(m.machine)||{}).n||'',(BRANDS[m.brand]||{}).n||'',m.model||'',m.serie||'',num(m.horas),u?u.date:''])}));
+  const G=[['Fecha','Tipo','Monto','Nota','Servicio','Cliente','Registró']].concat(gastos.slice().sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||'')).map(g=>{const o=orders.find(x=>x.id===g.orden);return[g.fecha||'',gTipo(g.tipo),num(g.monto),g.nota||'',g.orden||'',o?o.name:'',g.quien||'']}));
+  const P=[['Fecha de pago','Folio','Cliente','Cobrado','Método']].concat(orders.filter(o=>o.pagado).sort((a,b)=>String(a.pagadoEn||'').localeCompare(String(b.pagadoEn||''))).map(o=>[String(o.pagadoEn||o.terminadaEn||'').slice(0,10),o.id,o.name||'',num(o.cobrado??o.total),o.metodo||'']));
+  const blob=xlsx([{name:'Órdenes',rows:O},{name:'Clientes',rows:C},{name:'Máquinas',rows:M},{name:'Gastos',rows:G},{name:'Cobros',rows:P}]);
+  const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='agroruta-respaldo-'+todayISO()+'.xlsx';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove()},1500);
+  toast('Respaldo descargado');
+}
 
 /* ---------- navegación ---------- */
 let view='inicio';
 function route(){
-  const v=(location.hash||'#').slice(1),L=TEAM?['tecnico','agenda','pedir','dinero','cotizar','ajustes']:['inicio','pedir','cotizar','maquinas'];view=L.includes(v)?v:L[0];
+  const v=(location.hash||'#').slice(1),L=TEAM?['tecnico','agenda','pedir','dinero','clientes','ajustes','cotizar']:['inicio','pedir','cotizar','maquinas'];view=L.includes(v)?v:L[0];
   document.querySelectorAll('main>section').forEach(s=>s.hidden=s.id!=='v-'+view);
-  document.querySelectorAll('nav.tabs a').forEach(a=>{if(a.dataset.v===view)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
+  document.querySelectorAll('nav.tabs a').forEach(a=>{if(a.dataset.v===(view==='cotizar'&&TEAM?'pedir':view))a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
   renderView();scrollTo(0,0);
 }
-function renderView(){if(view==='ajustes')renderAjustes();if(view==='agenda')renderAgenda();if(view==='dinero')renderDinero();if(view==='maquinas')renderMaquinas();if(view==='inicio')renderHomeNext();if(view==='pedir')renderPedir();if(view==='cotizar')renderCotizar();if(view==='tecnico')renderTecnico()}
-function renderAll(){if(view==='tecnico')renderTecnico();if(view==='inicio')renderHomeNext();if(view==='agenda')renderAgenda();if(view==='dinero'&&!gBusy&&!$('#di-body').contains(document.activeElement))renderDinero();if(!$('#sheet').hidden&&openId&&!$('#sheet-panel').contains(document.activeElement&&document.activeElement.matches('input,textarea,select')?document.activeElement:null))renderOrder()}
-addEventListener('hashchange',()=>{if(location.hash==='#pedir'&&lastFolio){lastFolio=null}route()});
+function renderView(){if(view==='ajustes')renderAjustes();if(view==='clientes')renderClientes();if(view==='agenda')renderAgenda();if(view==='dinero')renderDinero();if(view==='maquinas')renderMaquinas();if(view==='inicio')renderHomeNext();if(view==='pedir')renderPedir();if(view==='cotizar')renderCotizar();if(view==='tecnico')renderTecnico()}
+function renderAll(){if(view==='clientes'&&!$('#v-clientes').contains(document.activeElement))renderClientes();if(!$('#sheet').hidden&&fichaId&&!cliEdit&&!openId)renderFicha();if(view==='tecnico')renderTecnico();if(view==='inicio')renderHomeNext();if(view==='agenda')renderAgenda();if(view==='dinero'&&!gBusy&&!$('#di-body').contains(document.activeElement))renderDinero();if(!$('#sheet').hidden&&openId&&!$('#sheet-panel').contains(document.activeElement&&document.activeElement.matches('input,textarea,select')?document.activeElement:null))renderOrder(true)}
+addEventListener('hashchange',()=>{if(location.hash==='#pedir'&&lastFolio){lastFolio=null}if(!$('#sheet').hidden)closeSheet();route()});
 document.querySelectorAll(TEAM?'[data-cli]':'[data-team]').forEach(e=>e.remove());if(TEAM)document.body.classList.add('team');(()=>{let on=false;try{on=localStorage.getItem('ar_big')==='1'}catch(e){}const set=v=>{document.documentElement.classList.toggle('big',v);$('#big').setAttribute('aria-pressed',v)};set(on);$('#big').onclick=()=>{on=!on;set(on);try{localStorage.setItem('ar_big',on?'1':'0')}catch(e){}toast(on?'Letra grande':'Letra normal')}})();
 route();
 initData();

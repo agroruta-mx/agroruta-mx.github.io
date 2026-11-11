@@ -105,6 +105,9 @@ section[hidden]{display:none!important}
 label.f{display:flex;flex-direction:column;gap:6px;font-weight:700}
 label.f span.h{font-weight:400;font-size:14px;color:var(--muted)}
 input[type=text],input[type=tel],input[type=date],input[type=number],select,textarea{width:100%;min-height:52px;border:2px solid var(--line);border-radius:12px;background:var(--surface);color:var(--fg);font:17px var(--f-body);padding:10px 12px}
+input[type=date]{-webkit-appearance:none;appearance:none;display:block;min-width:0;max-width:100%;text-align:left;line-height:1.3}
+input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0}
+input[type=date]::-webkit-calendar-picker-indicator{margin-left:auto}
 textarea{min-height:90px;resize:vertical}
 .seg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .seg button{min-height:52px;border-radius:12px;border:2px solid var(--line);background:var(--surface);color:var(--fg);font:700 16px var(--f-body);cursor:pointer}
@@ -255,6 +258,7 @@ nav.tabs a[aria-current="page"] svg{color:var(--accent)}
     <section id="v-maquinas" class="stack" hidden data-cli>
       <h2>Mis máquinas</h2>
       <p class="muted">Registra tus máquinas y te decimos cuándo les toca su siguiente servicio. Se guardan en este celular.</p>
+      <div class="card stack" id="mq-datos"></div>
       <div class="stack" id="mq-list"></div>
       <div class="card stack" id="mq-form"></div>
     </section>
@@ -431,9 +435,13 @@ async function copyText(t){try{await navigator.clipboard.writeText(t);toast('Cop
 function showCopyFallback(t){openSheet(`<div class="stack"><h3>Copia este texto</h3><textarea id="cpy" rows="10" readonly>${esc(t)}</textarea><button class="btn ghost block" type="button" onclick="closeSheet()">Listo</button></div>`);const a=$('#cpy');a.focus();a.select()}
 
 /* ---------- cotización ---------- */
-function blankDraft(){return{machine:'',services:[],muni:'',urgent:false,date:'',slot:'mañana',name:'',phone:'',place:'',model:'',hours:'',notes:'',interval:null,brand:'jd',hp:'m',junto:false,week:''}}
+function blankDraft(){return{machine:'',services:[],muni:'',urgent:false,date:'',slot:'',name:'',phone:'',place:'',model:'',hours:'',notes:'',interval:null,brand:'jd',hp:'m',junto:false,week:''}}
 let draft=blankDraft();
-try{const s=JSON.parse(localStorage.getItem('ar_draft')||'null');if(s)draft=Object.assign(blankDraft(),s)}catch(e){}
+let misDatos=null;try{misDatos=JSON.parse(localStorage.getItem('ar_misdatos')||'null')}catch(e){}
+try{const s=JSON.parse(localStorage.getItem('ar_draft')||'null');
+  if(!misDatos&&s&&(String(s.name||'').trim()||String(s.phone||'').trim())){misDatos={name:s.name||'',phone:s.phone||'',muni:s.muni||'',place:s.place||''};localStorage.setItem('ar_misdatos',JSON.stringify(misDatos))}
+  if(s){draft=Object.assign(blankDraft(),s);if(draft.date&&draft.date<todayISO())draft.date=''}
+  else if(misDatos)draft=Object.assign(blankDraft(),misDatos)}catch(e){}
 function saveDraft(){try{localStorage.setItem('ar_draft',JSON.stringify(draft))}catch(e){}}
 
 function quote(d){
@@ -517,7 +525,7 @@ function totalHTML(){
 }
 function bindPick(root,after){
   root.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{
-    const m=b.dataset.m;if(m!==draft.machine){if(draft.machine){draft.model='';draft.hours='';draft.week='';draft.junto=false}draft.machine=m;draft.interval=null;draft.services=[];draft.brand=brandKey(draft);const z=SIZES[m];if(z&&!z.find(x=>x.id===draft.hp))draft.hp=sizeOf(draft).id;}
+    const m=b.dataset.m;if(m!==draft.machine){if(draft.machine){draft.model='';draft.hours='';draft.week='';draft.junto=false;draft.date='';draft.slot=''}draft.machine=m;draft.interval=null;draft.services=[];draft.brand=brandKey(draft);const z=SIZES[m];if(z&&!z.find(x=>x.id===draft.hp))draft.hp=sizeOf(draft).id;}
     saveDraft();after()});
   root.querySelectorAll('[data-hp]').forEach(b=>b.onclick=()=>{draft.hp=b.dataset.hp;saveDraft();after('hp')});
   root.querySelectorAll('[data-s]').forEach(c=>c.onchange=()=>{
@@ -589,7 +597,9 @@ function renderPedir(){
     <button class="btn ghost block" type="button" id="w-share">Copiar pedido</button>
     <p class="muted small" style="text-align:center">WhatsApp de AgroRuta: <b>${WA_SHOW}</b></p>
     ${!TEAM&&o&&hasHours(o.machine)&&o.hours&&!maquinas.some(m=>m.machine===o.machine&&m.model===o.model&&String(m.hours)===String(o.hours))?`<button class="btn ghost block" type="button" id="w-save-mq">Guardar esta máquina en Mis máquinas</button>`:''}
+    ${!TEAM&&pendDatos&&pendDatos.name&&!(misDatos&&misDatos.name===pendDatos.name&&misDatos.phone===pendDatos.phone&&misDatos.muni===pendDatos.muni&&misDatos.place===pendDatos.place)?`<div class="card stack" id="w-datos" style="gap:10px"><b>¿Guardar tus datos para la próxima?</b><p class="muted small">Tu nombre, teléfono y lugar se quedan solo en este celular, para no volver a escribirlos. Los puedes borrar cuando quieras en Máquinas → Mis datos.</p><div class="flow"><button class="btn ghost sm" type="button" id="wd-no">No, gracias</button><button class="btn green sm" type="button" id="wd-si">Sí, guardar</button></div></div>`:''}
     <button class="btn ghost block" type="button" id="w-new">Hacer otro pedido</button>`;
+    const wds=$('#wd-si');if(wds){wds.onclick=()=>{guardarMisDatos(pendDatos);pendDatos=null;draft=Object.assign(draft,{name:misDatos.name,phone:misDatos.phone,muni:misDatos.muni,place:misDatos.place});saveDraft();$('#w-datos').remove();toast('Datos guardados')};$('#wd-no').onclick=()=>{pendDatos=null;$('#w-datos').remove()}}
     const sm=$('#w-save-mq');if(sm)sm.onclick=()=>{upsertMaquina({machine:o.machine,hp:o.hp,brand:o.brand,model:o.model||'',hours:Number(o.hours),week:o.week});sm.remove();toast('Guardada en Mis máquinas')};
     $('#w-share').onclick=()=>copyText(quoteText(o||draft,lastFolio));
     $('#w-new').onclick=()=>{lastFolio=null;step=0;renderPedir()};
@@ -600,12 +610,12 @@ function renderPedir(){
   $('#wiz-prog').querySelectorAll('i').forEach((i,n)=>i.className=n<=step?'on':'');
   $('#wiz-back').style.visibility=step?'visible':'hidden';
   setNextLabel();
-  const rerender=(soft)=>{if(soft&&step===1){$('#w-total').innerHTML=totalHTML()}else if(step===0){const y=scrollY;renderPedir();if(SIZES[draft.machine]&&soft!=='hp'){const c=$('#hp-card');if(c)c.scrollIntoView({behavior:'smooth',block:'start'});else scrollTo(0,y)}else setTimeout(()=>{if(draft.machine){step=1;renderPedir();scrollTo(0,0)}},180)}else if(!soft){const y=scrollY;renderPedir();scrollTo(0,y)}else if(step===2||step===3){const t=$('#w-total');if(t)t.innerHTML=totalHTML()}};
+  const rerender=(soft)=>{if(soft&&step===1){$('#w-total').innerHTML=totalHTML()}else if(step===0){const y=scrollY;renderPedir();if(SIZES[draft.machine]&&soft!=='hp'){const c=$('#hp-card');if(c)c.scrollIntoView({behavior:'smooth',block:'start'});else scrollTo(0,y)}else setTimeout(()=>{if(draft.machine&&step===0&&view==='pedir'){step=1;renderPedir();scrollTo(0,0)}},180)}else if(!soft){const y=scrollY;renderPedir();scrollTo(0,y)}else if(step===2||step===3){const t=$('#w-total');if(t)t.innerHTML=totalHTML()}};
   if(step===0)body.innerHTML=machinesHTML();
   if(step===1)body.innerHTML=servicesHTML()+`<div id="w-total">${totalHTML()}</div>`;
   if(step===2)body.innerHTML=`${placeHTML()}
     <label class="f">Referencia del lugar <span class="h">Rancho, ejido, carretera, km o liga de Google Maps</span><input type="text" data-f="place" id="w-place" value="${esc(draft.place)}"></label>
-    <label class="f">Día<input type="date" data-f="date" id="w-date" min="${todayISO()}" value="${esc(draft.date)}"></label>
+    <label class="f">Día<input type="date" data-f="date" id="w-date" ${TEAM?'':`min="${todayISO()}"`} value="${esc(draft.date)}"></label>
     <div class="stack" style="gap:6px"><b>Horario</b><div class="seg" id="w-slot">${['mañana','tarde'].map(s=>`<button type="button" data-slot="${s}" aria-pressed="${draft.slot===s}">${s==='mañana'?'Mañana (8–13 h)':'Tarde (13–18 h)'}</button>`).join('')}</div></div>
     <div id="w-total">${totalHTML()}</div>`;
   if(step===3)body.innerHTML=`<label class="f">Nombre<input type="text" data-f="name" id="w-name" autocomplete="name" value="${esc(draft.name)}"></label>
@@ -630,18 +640,35 @@ function summaryHTML(){
 function validate(){
   if(step===0&&!draft.machine)return'Toca el tipo de máquina para seguir.';
   if(step===1&&!draft.services.some(x=>x!=='revision'))return'Elige al menos un servicio.';
-  if(step===2){if(!draft.muni)return'Elige el municipio.';if(!draft.date)return'Elige el día del servicio.'}
-  if(step===3){if(draft.name.trim().length<2)return'Escribe tu nombre.';if(draft.phone.replace(/\D/g,'').length<10)return'Escribe un teléfono de 10 dígitos.'}
+  if(step===2){if(!draft.muni)return'Elige el municipio.';if(!draft.date)return'Elige el día del servicio.';if(!TEAM&&draft.date<todayISO())return'Ese día ya pasó. Elige de hoy en adelante.';if(!draft.slot)return'Elige si es en la mañana o en la tarde.'}
+  if(step===3){if(!TEAM&&draft.date&&draft.date<todayISO())return'El día que elegiste ya pasó. Regresa un paso y elige otro.';if(!draft.slot)return'Regresa un paso y elige mañana o tarde.';if(draft.name.trim().length<2)return'Escribe tu nombre.';if(draft.phone.replace(/\D/g,'').length<10)return'Escribe un teléfono de 10 dígitos.'}
   return'';
 }
 $('#wiz-back').onclick=()=>{if(step>0){step--;renderPedir();scrollTo(0,0)}};
 $('#wiz-next').onclick=async()=>{
   const e=validate();if(e){const el=$('#wiz-err');el.textContent=e;el.hidden=false;return}
+  if(step===2&&TEAM&&draft.date<todayISO()&&!confirm('Esta fecha ya pasó ('+fmtDate(draft.date)+'). ¿Seguro que la orden es de ese día?'))return;
   if(step<3){step++;renderPedir();scrollTo(0,0);return}
   $('#wiz-next').disabled=true;
   try{await createOrder()}finally{$('#wiz-next').disabled=false}
 };
-let lastOrder=null;
+let lastOrder=null,pendDatos=null;
+function guardarMisDatos(d){misDatos={name:String(d.name||'').trim(),phone:String(d.phone||'').trim(),muni:d.muni||'',place:String(d.place||'').trim()};try{localStorage.setItem('ar_misdatos',JSON.stringify(misDatos))}catch(e){}}
+function borrarMisDatos(){misDatos=null;try{localStorage.removeItem('ar_misdatos')}catch(e){}Object.assign(draft,{name:'',phone:'',muni:'',place:''});saveDraft()}
+function renderMisDatos(){const c=$('#mq-datos');if(!c)return;const d=misDatos||{name:'',phone:'',muni:'',place:''};
+  c.innerHTML=`<h3>Mis datos</h3><p class="muted small">${misDatos?'Se usan para llenar tus pedidos solos. Solo se guardan en este celular.':'Guárdalos para no escribirlos en cada pedido. Solo se quedan en este celular.'}</p>
+   <label class="f">Nombre<input type="text" id="md-name" autocomplete="name" value="${esc(d.name)}"></label>
+   <label class="f">Teléfono o WhatsApp<input type="tel" id="md-phone" inputmode="tel" autocomplete="tel" value="${esc(d.phone)}"></label>
+   <label class="f">Municipio<select id="md-muni"><option value="">Elige el municipio…</option>${MUNIS.map(([n])=>`<option ${d.muni===n?'selected':''}>${esc(n)}</option>`).join('')}</select></label>
+   <label class="f">Referencia del lugar <span class="h">Rancho, ejido, carretera o liga de Google Maps</span><input type="text" id="md-place" value="${esc(d.place)}"></label>
+   <p class="err" id="md-err" hidden></p>
+   <button class="btn green block" type="button" id="md-save">Guardar mis datos</button>
+   ${misDatos?`<button class="btn ghost block" type="button" id="md-del">Borrar mis datos de este celular</button>`:''}`;
+  $('#md-save').onclick=()=>{const n=$('#md-name').value.trim(),ph=$('#md-phone').value.trim(),er=$('#md-err');
+    if(n.length<2){er.textContent='Escribe tu nombre.';er.hidden=false;return}if(ph.replace(/\D/g,'').length<10){er.textContent='Escribe un teléfono de 10 dígitos.';er.hidden=false;return}
+    guardarMisDatos({name:n,phone:ph,muni:$('#md-muni').value,place:$('#md-place').value});if(!lastFolio)Object.assign(draft,misDatos);saveDraft();toast('Datos guardados');renderMisDatos()};
+  const dl=$('#md-del');if(dl)dl.onclick=()=>{dl.outerHTML=`<div class="flow"><button class="btn ghost sm" type="button" id="md-no">No</button><button class="btn sm" type="button" id="md-si" style="background:var(--danger);color:var(--on-danger)">Sí, borrar</button></div>`;$('#md-no').onclick=renderMisDatos;$('#md-si').onclick=()=>{borrarMisDatos();toast('Datos borrados');renderMisDatos()}};
+}
 function newFolio(){const d=new Date(),p=n=>String(n).padStart(2,'0');const r=Math.random().toString(36).slice(2,5).toUpperCase();return`AR-${p(d.getMonth()+1)}${p(d.getDate())}-${r}`}
 function buildOrder(d,folio,origen){
   const q=quote(d),t=v=>String(v||'').trim();
@@ -650,10 +677,11 @@ function buildOrder(d,folio,origen){
     interval:d.interval||null,junto:!!d.junto&&SMALL.includes(d.machine),brand:brandKey(d),hp:sizeOf(d)?sizeOf(d).id:null,total:q.total,traslado:q.traslado,costo:q.costo,origen:origen||'app',estado:'pendiente',tecnico:'',done:[],techNotes:'',created:new Date().toISOString(),updated:new Date().toISOString()};
 }
 const NUBE={url:'https://edknbmbzipckgbshmuha.supabase.co',key:'sb_publishable_B8O7gCqsK_LJgCPVqEew8w_HxunwAQM'};
-function enviarNube(o){try{fetch(NUBE.url+'/rest/v1/rpc/crear_pedido',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json',apikey:NUBE.key},body:JSON.stringify({p:o})}).then(r=>{if(r.ok){const lo=localOrders.find(x=>x.id===o.folio);if(lo){lo.nube=true;saveLocal()}}}).catch(()=>{})}catch(e){}}
+function enviarNube(o){try{const p=Object.assign({},o);['id','nube','estadoNube','llegada','recordado'].forEach(k=>delete p[k]);fetch(NUBE.url+'/rest/v1/rpc/crear_pedido',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json',apikey:NUBE.key},body:JSON.stringify({p})}).then(r=>{if(r.ok){const lo=localOrders.find(x=>x.id===o.folio);if(lo){lo.nube=true;saveLocal()}}}).catch(()=>{})}catch(e){}}
 let syncing=false,cliOpen=null;
 async function syncPedidos(){
   if(TEAM||syncing)return;const L=localOrders.filter(o=>!['terminada','cancelada'].includes(o.estado));if(!L.length)return;syncing=true;
+  L.filter(o=>o.nube===false&&(o.date||'')>=todayISO()).forEach(o=>enviarNube(Object.assign({},o,{folio:o.folio||o.id})));
   try{const r=await fetch(NUBE.url+'/rest/v1/rpc/estado_pedidos',{method:'POST',headers:{'Content-Type':'application/json',apikey:NUBE.key},body:JSON.stringify({folios:L.map(o=>o.id).slice(0,30)})});
     if(!r.ok)return;const rows=await r.json();if(!Array.isArray(rows))return;const m=Object.fromEntries(rows.map(x=>[x.id,x]));let ch=false;
     L.forEach(o=>{const x=m[o.id];
@@ -661,6 +689,7 @@ async function syncPedidos(){
       if(!o.nube){o.nube=true;ch=true}
       if(x.estado==='cancelada'){o.estado='cancelada';ch=true;return}
       if(x.estado&&x.estado!==o.estadoNube){o.estadoNube=x.estado;ch=true}
+      if((x.llegada||'')!==(o.llegada||'')){o.llegada=x.llegada||'';ch=true}
       if(x.fecha&&x.fecha!==o.date){o.date=x.fecha;ch=true}
       if(x.horario&&x.horario!==o.slot){o.slot=x.horario;ch=true}
       if(x.total!=null&&Number(x.total)>0&&Number(x.total)!==o.total){o.total=Number(x.total);ch=true}});
@@ -668,6 +697,15 @@ async function syncPedidos(){
   catch(e){}finally{syncing=false}
 }
 const estCli=o=>o.estadoNube||o.estado;
+const horaLleg=o=>{if(!o.llegada)return'';const d=new Date(o.llegada);return isNaN(d)?'':d.toLocaleTimeString('es-MX',{hour:'numeric',minute:'2-digit'})};
+async function preciosNube(){
+  try{const r=await fetch(NUBE.url+'/rest/v1/rpc/precios_publicos',{method:'POST',headers:{'Content-Type':'application/json',apikey:NUBE.key},body:'{}'});
+    if(!r.ok)return;const v=await r.json();if(!v||typeof v!=='object'||Array.isArray(v))return;
+    const antes=localStorage.getItem('ar_ajustes');const txt=JSON.stringify(v);if(antes===txt)return;
+    applyAjustes(v);try{localStorage.setItem('ar_ajustes',txt)}catch(e){}
+    if(view==='cotizar')renderCotizar();if(view==='pedir'&&!lastFolio)renderPedir();
+  }catch(e){}
+}
 async function saveOrder(o){
   if(!TEAM)enviarNube(o);
   let synced=false;
@@ -681,8 +719,9 @@ async function saveOrder(o){
 async function createOrder(){
   const folio=newFolio(),o=buildOrder(draft,folio,'app');
   const synced=await saveOrder(o);
+  if(!TEAM){const lo=localOrders.find(x=>x.id===folio);if(lo&&lo.nube!==true){lo.nube=false;saveLocal()}}
   lastOrder=Object.assign({id:folio,synced},o);lastFolio=folio;
-  const keep=TEAM?{}:{name:draft.name,phone:draft.phone,muni:draft.muni,place:draft.place};draft=Object.assign(blankDraft(),keep);saveDraft();
+  pendDatos=TEAM?null:{name:draft.name.trim(),phone:draft.phone.trim(),muni:draft.muni,place:draft.place.trim()};draft=Object.assign(blankDraft(),TEAM?{}:(misDatos||{}));saveDraft();
   renderPedir();scrollTo(0,0);renderHomeNext();if(view==='tecnico')renderTecnico();
 }
 
@@ -693,7 +732,7 @@ orders=localOrders;
 function saveLocal(){try{localStorage.setItem('ar_orders',JSON.stringify(localOrders))}catch(e){}}
 function setSync(on,t){const s=$('#sync');s.className='sync'+(on?' on':'');s.querySelector('span').textContent=t}
 async function initData(){
-  if(!TEAM){mode='local';renderAll();syncPedidos();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')syncPedidos()});return}
+  if(!TEAM){mode='local';renderAll();syncPedidos();preciosNube();addEventListener('online',()=>setTimeout(syncPedidos,1500));document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){syncPedidos();preciosNube()}});return}
   setSync(false,'Conectando…');
   let user=null;
   try{if(window.claude&&window.claude.use){[db,user]=await Promise.all([window.claude.use('db'),window.claude.use('user')])}}catch(e){db=null}
@@ -970,7 +1009,7 @@ function renderHomeNext(){if(!$('#home-next'))return;
   const up=TEAM?orders.filter(o=>o.date>=t&&!['terminada','cancelada'].includes(o.estado)).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3):orders.filter(o=>!['terminada','cancelada'].includes(o.estado)).sort((a,b)=>(a.date||'').localeCompare(b.date||'')).slice(0,5);
   if(!TEAM){const due=maquinas.map((m,ix)=>({m,di:dueInfo(m,m.updated)})).filter(x=>(x.di.date-Date.now())/864e5<=21);
     const hn=$('#home-due');if(hn)hn.innerHTML=due.length?`<div class="card stack" style="border-color:var(--warn)"><h3>Se acerca tu servicio</h3>${due.map(x=>`<p><b>${esc(dueTitle(x.m,x.di))}</b><br><span class="muted">aprox. ${x.di.date.toLocaleDateString('es-MX',{day:'numeric',month:'long'})}</span></p>`).join('')}<a class="btn primary block" href="#maquinas">Ver mis máquinas</a></div>`:''}
-  $('#home-next').innerHTML=`<h3>${TEAM?'Próximos servicios':'Mis pedidos'}</h3>`+(up.length?up.map(o=>`<button type="button" class="order st-${o.estado}" data-o="${esc(o.id)}"><div class="r1"><b>${esc(o.name)}</b><span class="pill st-${TEAM?o.estado:estCli(o)}">${stName(TEAM?o.estado:estCli(o))}</span></div><div class="r2"><span>${esc(fmtDate(o.date))} · ${esc(o.muni)}</span><span>${money(o.total||0)}</span></div></button>`).join(''):`<p class="muted">No hay servicios agendados todavía.</p>`);
+  $('#home-next').innerHTML=`<h3>${TEAM?'Próximos servicios':'Mis pedidos'}</h3>`+(up.length?up.map(o=>`<button type="button" class="order st-${TEAM?o.estado:estCli(o)}" data-o="${esc(o.id)}"><div class="r1"><b>${esc(o.name)}</b><span class="pill st-${TEAM?o.estado:estCli(o)}">${stName(TEAM?o.estado:estCli(o))}</span></div><div class="r2"><span>${esc(fmtDate(o.date))} · ${esc(o.muni)}</span><span>${money(o.total||0)}</span></div>${!TEAM&&estCli(o)==='camino'?`<div class="small" style="color:var(--green);font-weight:700">Va en camino${horaLleg(o)?' · llega aprox. '+esc(horaLleg(o)):''}</div>`:''}</button>`).join(''):`<p class="muted">No hay servicios agendados todavía.</p>`);
   $('#home-next').querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>openOrder(b.dataset.o));
 }
 
@@ -1041,7 +1080,7 @@ function renderClientOrder(o){
   const m=mach(o.machine);cliOpen=o.id;const en=estCli(o);
   openSheet(`<div class="stack"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="muted">${esc(o.id)}</span><button class="btn ghost sm" type="button" onclick="closeSheet()">Cerrar</button></div>
    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><h2>${esc(m?m.n:'Pedido')}${o.model?' · '+esc(o.model):''}</h2>${o.estado!=='terminada'?`<span class="pill st-${en}">${esc(stName(en))}</span>`:''}</div>
-   ${en==='confirmada'?'<div class="note">AgroRuta ya confirmó tu servicio.</div>':en==='camino'?'<div class="note">El técnico va en camino.</div>':''}
+   ${en==='confirmada'?'<div class="note">AgroRuta ya confirmó tu servicio.</div>':en==='camino'?`<div class="note"><b>El técnico va en camino.</b>${horaLleg(o)?' Llega aprox. a las <b>'+esc(horaLleg(o))+'</b>':''}</div>`:en==='servicio'?'<div class="note">El técnico ya está trabajando en tu máquina.</div>':''}
    <div class="card"><dl class="kv"><dt>Cuándo</dt><dd>${esc(fmtDate(o.date))}, ${esc(o.slot)}</dd><dt>Dónde</dt><dd>${esc(o.muni)}${o.place?' · '+esc(o.place):''}</dd>
    <dt>Servicios</dt><dd>${(o.services||[]).filter(id=>id!=='revision').map(id=>esc((svc(id)||{n:id}).n)).join(', ')}</dd><dt>Total</dt><dd><b>${money(o.total||0)}</b></dd></dl></div>
    ${o.estado==='terminada'?'<p class="muted">Este servicio ya está en tu historial.</p>':`<a class="btn ghost block" href="${waLink(quoteText(o,o.id))}" target="_blank" rel="noopener">Reenviar pedido por WhatsApp</a>
@@ -1052,6 +1091,7 @@ function renderClientOrder(o){
     $('#co-no').onclick=()=>renderClientOrder(o);$('#co-si').onclick=()=>{const i=localOrders.findIndex(x=>x.id===o.id);if(i>=0)localOrders.splice(i,1);saveLocal();orders=localOrders;closeSheet();renderAll();toast('Pedido quitado')}};
 }
 function renderMaquinas(){
+  renderMisDatos();
   const list=$('#mq-list');
   list.innerHTML=maquinas.length?maquinas.map((m,ix)=>{
     const mm=mach(m.machine),z=sizeOf(m),di=dueInfo(m,m.updated),hh=hasHours(m.machine);
@@ -1105,7 +1145,7 @@ function route(){
 }
 function renderView(){if(view==='ajustes')renderAjustes();if(view==='maquinas')renderMaquinas();if(view==='inicio')renderHomeNext();if(view==='pedir')renderPedir();if(view==='cotizar')renderCotizar();if(view==='tecnico')renderTecnico()}
 function renderAll(){if(view==='tecnico')renderTecnico();if(view==='inicio')renderHomeNext();if(!$('#sheet').hidden&&openId&&!$('#sheet-panel').contains(document.activeElement&&document.activeElement.matches('input[type=text],textarea')?document.activeElement:null))renderOrder()}
-addEventListener('hashchange',()=>{if(location.hash==='#pedir'&&lastFolio){lastFolio=null}route()});
+addEventListener('hashchange',()=>{if(location.hash==='#pedir'&&lastFolio){lastFolio=null}if(!$('#sheet').hidden)closeSheet();route()});
 document.querySelectorAll(TEAM?'[data-cli]':'[data-team]').forEach(e=>e.remove());if(TEAM)document.body.classList.add('team');(()=>{let on=false;try{on=localStorage.getItem('ar_big')==='1'}catch(e){}const set=v=>{document.documentElement.classList.toggle('big',v);$('#big').setAttribute('aria-pressed',v)};set(on);$('#big').onclick=()=>{on=!on;set(on);try{localStorage.setItem('ar_big',on?'1':'0')}catch(e){}toast(on?'Letra grande':'Letra normal')}})();
 route();
 initData();
