@@ -517,7 +517,7 @@ function totalHTML(){
 }
 function bindPick(root,after){
   root.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{
-    const m=b.dataset.m;if(m!==draft.machine){if(draft.machine){draft.model='';draft.hours='';draft.week=''}draft.machine=m;draft.interval=null;draft.services=draft.services.filter(id=>allowed(id,m));draft.brand=brandKey(draft);const z=SIZES[m];if(z&&!z.find(x=>x.id===draft.hp))draft.hp=sizeOf(draft).id;}
+    const m=b.dataset.m;if(m!==draft.machine){if(draft.machine){draft.model='';draft.hours='';draft.week='';draft.junto=false}draft.machine=m;draft.interval=null;draft.services=[];draft.brand=brandKey(draft);const z=SIZES[m];if(z&&!z.find(x=>x.id===draft.hp))draft.hp=sizeOf(draft).id;}
     saveDraft();after()});
   root.querySelectorAll('[data-hp]').forEach(b=>b.onclick=()=>{draft.hp=b.dataset.hp;saveDraft();after('hp')});
   root.querySelectorAll('[data-s]').forEach(c=>c.onchange=()=>{
