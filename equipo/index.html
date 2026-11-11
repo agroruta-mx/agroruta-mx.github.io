@@ -169,6 +169,8 @@ body.team::before{display:none}
 .team nav.tabs a[aria-current="page"],.team nav.tabs a[aria-current="page"] svg{color:var(--accent)}
 nav.tabs::after{content:"";position:absolute;left:0;right:0;top:100%;height:120px;background:var(--th)}
 @media (max-width:370px){.team .sync span{display:none}.brand{font-size:19px}.tag{font-size:11px;padding:4px 6px}header.top .row{gap:6px}}
+#t-filters{flex-wrap:wrap;overflow:visible}#t-filters .chip{padding:8px 12px}
+#toast{display:flex;align-items:center;gap:14px;top:calc(env(safe-area-inset-top,0px) + 74px);bottom:auto;box-shadow:0 6px 20px rgba(0,0,0,.25)}#toast[hidden]{display:none!important}#t-undo{appearance:none;border:0;background:var(--accent);color:var(--accent-ink);font:800 15px var(--f-body);padding:8px 12px;border-radius:8px;cursor:pointer}
 /* --- Clientes por municipio --- */
 .mbar{display:flex;flex-direction:column;gap:4px}
 .mbar .mrow{display:flex;justify-content:space-between;gap:8px;font-size:15px}
@@ -348,7 +350,7 @@ nav.tabs::after{content:"";position:absolute;left:0;right:0;top:100%;height:120p
     <section id="v-tecnico" class="stack" hidden>
       <div class="stack" style="gap:10px">
         <h2>Panel del técnico</h2>
-        <div class="flow"><button class="btn primary sm" type="button" id="t-paste">Pegar pedido</button><a class="btn green sm" href="#pedir">+ Nueva orden</a></div>
+        <a class="btn green block" href="#pedir">+ Nueva orden</a>
       </div>
       <div class="kpis" id="t-kpis"></div>
       <div style="display:flex;gap:8px"><input type="text" id="t-search" placeholder="Buscar cliente, folio o municipio" style="flex:1;min-width:0"><button type="button" class="btn ghost sm" id="t-clear" hidden aria-label="Borrar búsqueda">✕</button></div>
@@ -511,6 +513,8 @@ const svc=id=>SERVICES.find(s=>s.id===id);
 const stName=id=>(STATES.find(s=>s.id===id)||{}).n||id;
 
 function toast(t){const el=$('#toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,2400)}
+function toastUndo(t,id,prev){const el=$('#toast');el.innerHTML=`<span>${esc(t)}</span><button type="button" id="t-undo">Deshacer</button>`;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,6000);
+  $('#t-undo').onclick=async()=>{el.hidden=true;clearTimeout(toast.t);if(await patchOrder(id,Object.assign({},prev))){toast('Listo, se deshizo');if(!$('#sheet').hidden&&openId===id)renderOrderSoon()}}}
 async function copyText(t){try{await navigator.clipboard.writeText(t);toast('Copiado. Pégalo en WhatsApp.')}catch(e){showCopyFallback(t)}}
 function showCopyFallback(t){openSheet(`<div class="stack"><h3>Copia este texto</h3><textarea id="cpy" rows="10" readonly>${esc(t)}</textarea><button class="btn ghost block" type="button" onclick="closeSheet()">Listo</button></div>`);const a=$('#cpy');a.focus();a.select()}
 
@@ -562,7 +566,7 @@ function quoteText(d,folio){
   t+=`*Total estimado: ${money(q.total)}*\n`;
   if(folio){t+=`Fecha: ${fmtDate(d.date)}, ${d.slot}\nLugar: ${d.place||d.muni}\nCliente: ${d.name} · ${d.phone}\n${d.notes?'Notas: '+d.notes+'\n':''}`}
   t+='Refacciones especiales se cotizan aparte.';
-  if(folio)t+=`\n\nCódigo (no lo borres): AR1.${encodeOrder(d,folio)}`;
+  if(folio&&!TEAM)t+=`\n\nCódigo (no lo borres): AR1.${encodeOrder(d,folio)}`;
   return t;
 }
 
@@ -778,7 +782,7 @@ async function initData(){
   db.doc('config/ajustes').onSnapshot(sn=>{if(sn.exists){applyAjustes(sn.data());try{localStorage.setItem('eq_ajustes',JSON.stringify(sn.data()))}catch(e){};if(view==='cotizar')renderCotizar()}},()=>{});
   db.collection('clientes').orderBy('nombre','asc').limit(3000).onSnapshot(sn=>{clientes=sn.docs.map(d=>Object.assign({id:d.id},d.data()));if(!sn.metadata.fromCache){clientesLive=true;migrarClientes()}if(view==='clientes'&&!$('#v-clientes').contains(document.activeElement))renderClientes();if(!$('#sheet').hidden&&fichaId&&!cliEdit)renderFicha()},()=>{});
   db.doc('config/clientes').onSnapshot(sn=>{cliCfg=sn.exists?sn.data():null;if(!sn.metadata.fromCache){cliCfgLive=true;migrarClientes()}},()=>{});
-  db.collection('gastos').orderBy('fecha','desc').limit(2000).onSnapshot(sn=>{gastos=sn.docs.map(d=>Object.assign({id:d.id},d.data()));if(view==='dinero'&&!gBusy&&!$('#di-body').contains(document.activeElement))renderDinero();if(!$('#sheet').hidden&&openId)renderAll()},()=>{});
+  db.collection('gastos').orderBy('fecha','desc').limit(2000).onSnapshot(sn=>{gastos=sn.docs.map(d=>Object.assign({id:d.id},d.data()));if(view==='dinero'&&!gBusy&&!$('#di-body').contains(document.activeElement))renderDinero();if(view==='tecnico')renderTecnico();if(!$('#sheet').hidden&&openId)renderAll()},()=>{});
   migrateLocal();
 }
 async function migrateLocal(){
@@ -815,14 +819,21 @@ const AJ=[
  ['meta','Meta de ahorro (camioneta)','$',()=>META_NP300,v=>META_NP300=v]
 ];
 const AJ_DEF=Object.fromEntries(AJ.map(a=>[a[0],a[3]()]));
+const AJ_EXP={margen:'% que le ganan a las refacciones. Con 25%, un filtro que compran en $100 se cobra en $125',labor:'Lo que cobran por cada hora de trabajo en tractores y cosechadoras',oil:'Precio al que compran el litro de aceite de motor',hyd:'Precio al que compran el litro de aceite hidráulico',km:'Lo que les cuesta cada km de camioneta (diésel + desgaste). Es costo, no ganancia',manejo:'Lo que cobran por cada hora manejando hasta el cliente. Esto sí es ganancia',urg:'Cuánto más se cobra si el cliente lo quiere el mismo día',afin_g:'Precio fijo de la afinación de motobombas y equipos de gasolina',afin_d:'Precio fijo de la afinación de motores diésel chicos',meta:'Cuánto quieren juntar para la camioneta'};
 function applyAjustes(v){if(!v)return;AJ.forEach(a=>{const n=Number(v[a[0]]);if(isFinite(n)&&n>=0)a[4](n)});recalcZones()}
 try{applyAjustes(JSON.parse(localStorage.getItem('eq_ajustes')||'null'))}catch(e){}
 function renderAjustes(){
-  $('#aj-body').innerHTML=cuentaHTML()+(`<h3>Precios</h3><p class="muted small">Cambia un valor y todos los precios se recalculan. Las órdenes que ya existen conservan su total.</p>
-   ${AJ.map(a=>`<label class="f">${a[1]} <span class="h">${a[2]}</span><input type="number" inputmode="decimal" step="any" min="0" id="aj-${a[0]}" value="${+a[3]().toFixed(2)}"></label>`).join('')}
-   <div class="note">Al guardar, los precios nuevos también aparecen en la app de clientes (en cuanto la abran).</div>
-   <button class="btn green block" type="button" id="aj-save">Guardar ajustes</button>
-   <button class="btn ghost block" type="button" id="aj-reset">Regresar a los valores originales</button>`);
+  $('#aj-body').innerHTML=cuentaHTML()+(`<details class="card" id="aj-precios"><summary style="cursor:pointer;font-weight:700">Precios (avanzado)</summary><div class="stack" style="margin-top:12px">
+   <p class="muted small">Con estos valores la app calcula todos los precios y costos. Cambia uno y mira cómo quedan los ejemplos antes de guardar. Las órdenes que ya existen no cambian.</p>
+   <div class="note" id="aj-ej"></div>
+   ${AJ.map(a=>`<label class="f">${a[1]} <span class="h">${AJ_EXP[a[0]]||a[2]}</span><input type="number" inputmode="decimal" step="any" min="0" id="aj-${a[0]}" value="${+a[3]().toFixed(2)}"></label>`).join('')}
+   <div class="note">Al guardar, los precios nuevos también le salen a los clientes en su app (en cuanto la abran).</div>
+   <button class="btn green block" type="button" id="aj-save">Guardar precios</button>
+   <button class="btn ghost block" type="button" id="aj-reset">Regresar a los valores originales</button></div></details>`);
+  const ej=()=>{const saved=Object.fromEntries(AJ.map(a=>[a[0],a[3]()]));const tmp=Object.fromEntries(AJ.map(a=>[a[0],Number($('#aj-'+a[0]).value)]));applyAjustes(tmp);
+    const t=quote(Object.assign(blankDraft(),{machine:'tractor',hp:'m',brand:'jd',services:['aceite'],muni:'Tala'})),b=price('afinacion',Object.assign(blankDraft(),{machine:'bomba',brand:'honda'}));
+    const tr=ZONES[1].fee;applyAjustes(saved);$('#aj-ej').innerHTML=`<b>Así quedan los precios:</b><br>Cambio de aceite tractor mediano: <b>${money(t.lines[0].p)}</b><br>Afinación motobomba: <b>${money(b)}</b><br>Traslado a Tala (hasta 40 km): <b>${money(tr)}</b>`};
+  AJ.forEach(a=>{$('#aj-'+a[0]).oninput=ej});ej();
   $('#aj-save').onclick=()=>saveAjustes(Object.fromEntries(AJ.map(a=>[a[0],Number($('#aj-'+a[0]).value)])));
   $('#aj-reset').onclick=()=>saveAjustes(AJ_DEF);
   $('#aj-body').insertAdjacentHTML('beforeend',`<div class="card stack" style="gap:8px"><h3>Respaldo</h3><p class="muted small">Baja en un archivo de Excel todas las órdenes, clientes, máquinas, gastos y cobros. Guárdalo de vez en cuando.</p><button class="btn ghost block" type="button" id="aj-xlsx">Descargar todo en Excel</button></div>`);$('#aj-xlsx').onclick=respaldoExcel;
@@ -836,7 +847,7 @@ async function saveAjustes(v){
 
 /* ---------- vista técnico ---------- */
 let tFilter='hoy',tSearch='';
-const FILTERS=[['hoy','Hoy'],['pendiente','Por confirmar'],['activas','En proceso'],['cobrar','Por cobrar'],['terminada','Terminadas'],['recordar','Recordatorios'],['todas','Todas']];
+const FILTERS=[['hoy','Hoy'],['pendiente','Por confirmar'],['activas','En proceso'],['cobrar','Por cobrar'],['todas','Todas']];
 function filtered(){
   const t=todayISO(),q=tSearch.trim().toLowerCase();
   return orders.filter(o=>{
@@ -851,7 +862,28 @@ function filtered(){
 }
 const costoOf=o=>o.costo??quote(o).costo;
 const cobroOf=o=>o.pagado?(o.cobrado??o.total??0):(o.total||0);
-const ganOf=o=>cobroOf(o)-costoOf(o);
+const TECNICOS=['Hernán','Federico','Los dos'];
+function tecNorm(t){t=String(t||'').trim().toLowerCase();if(!t)return'';if(t==='los dos'||/ y |,|&/.test(t))return'Los dos';if(t.includes('federico')||t==='fede')return'Federico';if(t.startsWith('hern'))return'Hernán';return''}
+const tecDe=(o,t)=>{const n=tecNorm(o.tecnico);return t==='-'?!n:(n===t||n==='Los dos')};
+const CAT_CAM=['diesel','casetas'],CAT_REF=['refacciones','aceite'];
+function camEstOf(o){if(o.junto)return 0;const mu=MUNIS.find(x=>x[0]===o.muni);const z=mu?ZONES[mu[1]]:null;if(!z||!(Number(o.traslado)>0))return 0;return Math.round(z.km*COSTO_KM)}
+function cuentas(o){
+  const G=typeof gastos!=='undefined'?gastos.filter(g=>g.orden===o.id):[],sum=c=>G.filter(g=>c.includes(g.tipo)).reduce((a,g)=>a+(Number(g.monto)||0),0);
+  const cobro=cobroOf(o),camEst=camEstOf(o),refEst=Math.max(0,costoOf(o)-camEst);
+  const camReal=sum(CAT_CAM),refReal=sum(CAT_REF),otros=G.filter(g=>![...CAT_CAM,...CAT_REF].includes(g.tipo)).reduce((a,g)=>a+(Number(g.monto)||0),0);
+  const cam=camReal>0?camReal:camEst,ref=refReal>0?refReal:refEst,costo=cam+ref+otros;
+  return{cobro,camEst,refEst,camReal,refReal,cam,ref,otros,costo,gan:cobro-costo,camR:camReal>0,refR:refReal>0};
+}
+const ganOf=o=>cuentas(o).gan;
+const gastosGenerales=R=>(typeof gastos!=='undefined'?gastos:[]).filter(g=>!g.orden&&(!R||inR(dLocal(g.fecha),R)));
+function cuentasHTML(o,K){if(o.estado==='cancelada')return'';const tag=r=>`<span class="muted small">${r?'(real)':'(calculado)'}</span>`;
+  return`<details class="card"><summary style="cursor:pointer;font-weight:700;display:flex;justify-content:space-between;gap:8px"><span>Ganancia de este servicio</span><b style="color:var(--green)" class="${K.gan<0?'neg':''}">${money(K.gan)}</b></summary>
+   <dl class="kv" style="margin-top:10px"><dt>${o.pagado?'Cobrado':'Total'}</dt><dd>${money(K.cobro)}</dd>
+   <dt>Refacciones</dt><dd>− ${money(K.ref)} ${tag(K.refR)}</dd><dt>Camioneta</dt><dd>− ${money(K.cam)} ${tag(K.camR)}</dd>
+   ${K.otros?`<dt>Otros gastos</dt><dd>− ${money(K.otros)} <span class="muted small">(real)</span></dd>`:''}
+   <dt><b>Ganancia</b></dt><dd><b style="color:var(--green)">${money(K.gan)}</b></dd></dl>
+   <p class="muted small" style="margin-top:8px">“Calculado” es lo que estima la app. Si anotan el gasto real de este servicio (en Más opciones → Gastos), se usa ese.${K.camEst&&!K.camR?' De lo que se cobra de traslado, solo la parte de diésel y desgaste es costo; lo demás es su pago por manejar.':''}</p></details>`}
+
 const doneAt=o=>new Date(o.terminadaEn||o.updated);
 function recordatorios(){
   const last={};orders.filter(o=>o.estado==='terminada').forEach(o=>{const k=String(o.phone||'').replace(/\D/g,'').slice(-10)+'|'+o.machine+'|'+(o.model||'').toLowerCase();const d=doneAt(o);if(!last[k]||doneAt(last[k])<d)last[k]=o});
@@ -879,12 +911,12 @@ function renderTecnico(){
   const pend=orders.filter(o=>o.estado==='pendiente').length;
   const d0=new Date();const wk=new Date(d0.getFullYear(),d0.getMonth(),d0.getDate()-((d0.getDay()+6)%7));
   const done=orders.filter(o=>o.estado==='terminada');
-  const ganSem=done.filter(o=>doneAt(o)>=wk).reduce((a,o)=>a+ganOf(o),0);
+  const ganSem=finanzas('semana').gan;
   const porCobrar=done.filter(o=>!o.pagado);
-  const ganTot=done.reduce((a,o)=>a+ganOf(o),0),pct=Math.min(100,ganTot/META_NP300*100);
+  const ganTot=finanzas('todo').gan,pct=Math.min(100,ganTot/META_NP300*100);
   const k=n=>n>=10000?'$'+(n/1000).toFixed(0)+'k':money(n);
   $('#t-kpis').innerHTML=`<div class="kpi"><b>${hoy}</b><span>Servicios hoy</span></div><div class="kpi"><b>${pend}</b><span>Por confirmar</span></div><div class="kpi"><b>${k(ganSem)}</b><span>Ganancia semana</span></div>
-   <div class="kpi" style="grid-column:1/-1;display:flex;flex-direction:column;gap:6px"><div style="display:flex;justify-content:space-between;gap:8px;font-size:14px"><span><b style="display:inline;font-size:16px;font-family:var(--f-body)">Meta: NP300 diésel</b></span><span style="font-variant-numeric:tabular-nums">${money(ganTot)} de ${money(META_NP300)}</span></div><div style="height:10px;border-radius:5px;background:var(--surface-2);overflow:hidden"><div style="height:100%;width:${pct.toFixed(1)}%;background:var(--accent)"></div></div><span>Suma de la ganancia de los servicios terminados (${done.length})</span></div>
+   <div class="kpi" style="grid-column:1/-1;display:flex;flex-direction:column;gap:6px"><div style="display:flex;justify-content:space-between;gap:8px;font-size:14px"><span><b style="display:inline;font-size:16px;font-family:var(--f-body)">Meta: NP300 diésel</b></span><span style="font-variant-numeric:tabular-nums">${money(ganTot)} de ${money(META_NP300)}</span></div><div style="height:10px;border-radius:5px;background:var(--surface-2);overflow:hidden"><div style="height:100%;width:${pct.toFixed(1)}%;background:var(--accent)"></div></div><span>Ganancia de ${done.length} servicio${done.length===1?'':'s'} terminado${done.length===1?'':'s'}, menos gastos (igual que en Dinero)</span></div>
    ${porCobrar.length?`<button type="button" class="kpi" data-tf2="cobrar" style="grid-column:1/-1;text-align:left;cursor:pointer;border-color:var(--warn);font:inherit;color:var(--fg)"><span style="color:var(--warn);font-weight:700;font-size:15px">Por cobrar: ${money(porCobrar.reduce((a,o)=>a+(o.total||0),0))} de ${porCobrar.length} servicio${porCobrar.length===1?'':'s'} →</span></button>`:''}`;
   if(window.AR&&['apagado','ios-instalar'].includes(AR.notifEstado))$('#t-kpis').insertAdjacentHTML('beforeend',`<a class="kpi" href="#ajustes" style="grid-column:1/-1;text-decoration:none;border-color:var(--green);color:var(--fg)"><span style="color:var(--green);font-weight:700;font-size:15px">🔔 Activa las notificaciones en este aparato →</span></a>`);
   const nRec=recordatorios().length;
@@ -911,9 +943,8 @@ function renderTecnico(){
     :`<div class="empty">${orders.length?'No hay órdenes en este filtro.':'Aún no hay órdenes. Cuando alguien pida un servicio aparecerá aquí.'}<br><br><a class="btn green sm" href="#pedir">Registrar la primera orden</a></div>`);
   $('#t-list').querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>openOrder(b.dataset.o));
   const ag=$('#t-agenda');if(ag)ag.onclick=()=>copyText(`*Agenda AgroRuta – ${fmtDate(todayISO())}*\n`+ruta.map((o,i)=>`${i+1}. ${o.slot==='mañana'?'Mañana':'Tarde'} · ${o.name} (${o.phone})\n   ${(mach(o.machine)||{}).n||''}${o.model?' '+o.model:''} · ${(o.services||[]).filter(x=>x!=='revision').map(x=>(svc(x)||{n:x}).n).join(', ')}\n   ${o.muni}${o.place?' · '+o.place:''} · ${money(o.total||0)}`).join('\n')+`\n\nTotal del día: ${money(ruta.reduce((a,o)=>a+(o.total||0),0))}`);
-  $('#t-list').querySelectorAll('[data-qa]').forEach(b=>b.onclick=async()=>{const o=orders.find(x=>x.id===b.dataset.qa);if(!o)return;const nx=NEXT[o.estado];if(nx==='camino'){salirARuta(o);return}b.disabled=true;const pt={estado:nx};if(nx==='terminada')pt.terminadaEn=new Date().toISOString();if(await patchOrder(o.id,pt)){toast(o.name+': '+stName(nx));if(nx==='confirmada'||nx==='terminada')asegurarFicha(Object.assign({},o,pt));if(nx==='terminada')openOrder(o.id)}else b.disabled=false});
+  $('#t-list').querySelectorAll('[data-qa]').forEach(b=>b.onclick=async()=>{const o=orders.find(x=>x.id===b.dataset.qa);if(!o)return;const nx=NEXT[o.estado];if(nx==='camino'){salirARuta(o);return}b.disabled=true;const pt={estado:nx},prev={estado:o.estado};if(nx==='terminada'){pt.terminadaEn=new Date().toISOString();prev.terminadaEn=null}if(await patchOrder(o.id,pt)){toastUndo(o.name+': '+stName(nx),o.id,prev);if(nx==='confirmada'||nx==='terminada')asegurarFicha(Object.assign({},o,pt));if(nx==='terminada')openOrder(o.id)}else b.disabled=false});
 }
-$('#t-paste').onclick=openPaste;
 $('#t-search').oninput=e=>{tSearch=e.target.value;$('#t-clear').hidden=!tSearch;renderTecnico()};
 $('#t-clear').onclick=()=>{tSearch='';$('#t-search').value='';$('#t-clear').hidden=true;renderTecnico()};
 
@@ -929,37 +960,39 @@ function renderOrder(preservar){
   const items=(o.services||[]).flatMap(id=>{const s=svc(id);if(id==='afinacion'){const inc=(brandOf(o).inc||[]).filter(x=>allowed(x,o.machine,o)&&x!=='revision');return inc.map(x=>({id:'af_'+x,n:'Afinación: '+svc(x).n}))}return s&&s.pack?s.pack.map(p=>({id:p,n:svc(p).n})):[{id,n:s?s.n:id}]});
   const nx=NEXT[o.estado];
   const maps='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent((o.place||'')+' '+o.muni+', Jalisco');
+  const K=cuentas(o),tsel=tecNorm(o.tecnico);
   openSheet(`<div class="stack">
    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="muted">${esc(o.id)}</span><button class="btn ghost sm" type="button" onclick="closeSheet()">Cerrar</button></div>
-   <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><h2>${esc(o.name)}</h2><span class="pill st-${o.estado}">${stName(o.estado)}</span></div>
-   ${nx&&o.estado!=='cancelada'?`<button class="btn primary block" type="button" id="o-next">${NEXT_LABEL[o.estado]}</button>`:''}
+   <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><h2>${esc(o.name)}</h2><span class="pill st-${o.estado}">${o.estado==='terminada'?(o.pagado?'Pagado':'Por cobrar'):stName(o.estado)}</span></div>
+   ${nx&&o.estado!=='cancelada'?`<button class="btn primary block" type="button" id="o-next" style="min-height:62px;font-size:20px">${NEXT_LABEL[o.estado]} →</button>`:''}
+   ${o.estado==='terminada'&&!o.pagado?`<div class="card stack" style="border:2px solid var(--warn)"><h3>Registrar pago</h3>
+     <label class="f">Cobrado<input type="number" inputmode="numeric" id="o-cob" value="${o.total||0}"></label>
+     <div class="seg" id="o-met">${['Efectivo','Transferencia'].map((x,i)=>`<button type="button" data-met="${x}" aria-pressed="${i===0}">${x}</button>`).join('')}</div>
+     <button class="btn green block" type="button" id="o-pay">Marcar como pagado</button></div>`:''}
+   ${o.estado==='terminada'&&o.pagado?`<a class="btn green block" href="${waLink(notaServicio(o),o.phone)}" target="_blank" rel="noopener" style="min-height:62px;font-size:19px">Mandar nota de servicio por WhatsApp</a>`:''}
    <div class="card"><dl class="kv">
     <dt>Teléfono</dt><dd><b style="font-variant-numeric:tabular-nums">${esc(o.phone)}</b></dd>
-    <dt>Máquina</dt><dd>${esc(m?m.n:'')}${o.hp?' · '+esc(hpOf(o).r):''}${o.model?' · '+esc(o.model):''}${o.hours?' · '+esc(o.hours)+(o.machine==='camioneta'?' km':' h'):''}</dd>
-    <dt>Cuándo</dt><dd>${esc(fmtDate(o.date))}, ${esc(o.slot)}${o.urgent?' · urgente':''}</dd>
+    <dt>Máquina</dt><dd>${esc(m?m.n:'')}${sizeOf(o)?' '+esc(sizeOf(o).n.toLowerCase()):''}${o.model?' · '+esc(o.model):''}${o.serie?' · serie '+esc(o.serie):''}${o.hours?' · '+esc(Number(o.hours).toLocaleString('es-MX'))+(o.machine==='camioneta'?' km':' h'):''}</dd>
+    <dt>Cuándo</dt><dd>${esc(fmtDate(o.date))}, ${esc(o.slot||'sin horario')}${o.urgent?' · <b style="color:var(--warn)">urgente</b>':''}</dd>
     <dt>Dónde</dt><dd>${esc(o.muni)}${o.place?' · '+esc(o.place):''}</dd>
     ${o.interval?`<dt>Servicio</dt><dd>${o.interval.toLocaleString('es-MX')} horas</dd>`:''}
     ${(o.extras||[]).map(x=>`<dt>Extra</dt><dd>${esc(x.n)}: ${money(x.p)}</dd>`).join('')}
     <dt>Total</dt><dd><b>${money(o.total||0)}</b>${o.pagado?` · <span class="pill st-terminada">Pagado ${money(o.cobrado??o.total)}${o.metodo?' · '+esc(o.metodo):''}</span>`:''}</dd>
-    <dt>Costos</dt><dd>${money(costoOf(o))} <span class="muted small">(refacciones + camioneta)</span></dd>
-    <dt>Para ustedes</dt><dd><b style="color:var(--green)">${money(ganOf(o))}</b></dd>
     ${o.notes?`<dt>Cliente dice</dt><dd>${esc(o.notes)}</dd>`:''}
    </dl></div>
- ${o.estado==='terminada'&&!o.pagado?`<div class="card stack" style="border-color:var(--warn)"><h3>Registrar pago</h3>
-     <label class="f">Cobrado<input type="number" inputmode="numeric" id="o-cob" value="${o.total||0}"></label>
-     <div class="seg" id="o-met">${['Efectivo','Transferencia'].map((x,i)=>`<button type="button" data-met="${x}" aria-pressed="${i===0}">${x}</button>`).join('')}</div>
-     <button class="btn green block" type="button" id="o-pay">Marcar como pagado</button></div>`:''}
- ${o.estado==='terminada'?(()=>{const di=dueInfo(o,doneAt(o));return`<div class="card stack" style="gap:8px"><b>Siguiente servicio</b><span>${esc(dueTitle(o,di))} · aprox. ${di.date.toLocaleDateString('es-MX',{day:'numeric',month:'long'})}${di.est?' <span class="muted small">(sugerida, el cliente no dio horas por semana)</span>':''}</span>
-     <a class="btn ghost sm" href="${gcalLink('Avisar a '+o.name+': '+dueTitle(o,di),addDays(di.date,-7),'Mandar recordatorio por WhatsApp al '+o.phone+'. Último servicio: '+o.id)}" target="_blank" rel="noopener">Poner aviso en mi calendario (1 semana antes)</a></div>`})():''}
-   ${o.estado==='terminada'?`<a class="btn green block" href="${waLink(notaServicio(o),o.phone)}" target="_blank" rel="noopener">Mandar nota de servicio por WhatsApp</a>`:''}
-   <div class="flow"><a class="btn green sm" href="${waLink(clientMsg(o),o.phone)}" target="_blank" rel="noopener">WhatsApp al cliente</a><a class="btn ghost sm" href="${maps}" target="_blank" rel="noopener">Abrir en Maps</a></div>
-   <button class="btn ghost sm" type="button" id="o-tel">Copiar teléfono del cliente</button>
-   <h3>Lista de trabajo</h3>
-   <div class="stack" style="gap:8px">${items.map(it=>`<label class="svc"><input type="checkbox" data-done="${it.id}" ${done.includes(it.id)?'checked':''}><span class="t"><b>${esc(it.n)}</b></span></label>`).join('')}</div>
+   <div class="flow"><a class="btn green sm" href="${waLink(clientMsg(o),o.phone)}" target="_blank" rel="noopener">WhatsApp</a><a class="btn ghost sm" href="tel:${esc(String(o.phone||'').replace(/\D/g,''))}">Llamar</a></div>
+   <a class="btn ghost sm block" href="${maps}" target="_blank" rel="noopener">Abrir en Maps</a>
+   ${cuentasHTML(o,K)}
+   ${o.estado!=='cancelada'?`<div class="stack" style="gap:6px"><b>Técnico</b><div class="seg" style="grid-template-columns:repeat(3,minmax(0,1fr))" id="o-tecs">${TECNICOS.map(t=>`<button type="button" data-tec2="${t}" aria-pressed="${tsel===t}">${t}</button>`).join('')}</div>${o.tecnico&&!tsel?`<span class="muted small">Antes decía: ${esc(o.tecnico)}</span>`:''}</div>`:''}
+   ${o.estado!=='cancelada'?`<h3>Lista de trabajo</h3>
+   <div class="stack" style="gap:8px">${items.map(it=>`<label class="svc"><input type="checkbox" data-done="${it.id}" ${done.includes(it.id)?'checked':''}><span class="t"><b>${esc(it.n)}</b></span></label>`).join('')}</div>`:''}
    ${fotosHTML(o)}
-   <label class="f">Técnico asignado<input type="text" id="o-tech" value="${esc(o.tecnico||'')}" placeholder="Nombre del técnico"></label>
    <label class="f">Notas del técnico <span class="h">Refacciones usadas, hallazgos, recomendaciones</span><textarea id="o-notes">${esc(o.techNotes||'')}</textarea></label>
    <button class="btn green block" type="button" id="o-save">Guardar notas</button>
+   ${o.estado==='terminada'?(()=>{const di=dueInfo(o,doneAt(o));return`<div class="card stack" style="gap:8px"><b>Siguiente servicio</b><span>${esc(dueTitle(o,di))} · aprox. ${di.date.toLocaleDateString('es-MX',{day:'numeric',month:'long'})}${di.est?' <span class="muted small">(sugerida, el cliente no dio horas por semana)</span>':''}</span>
+     <a class="btn ghost sm" href="${gcalLink('Avisar a '+o.name+': '+dueTitle(o,di),addDays(di.date,-7),'Mandar recordatorio por WhatsApp al '+o.phone+'. Último servicio: '+o.id)}" target="_blank" rel="noopener">Poner aviso en mi calendario (1 semana antes)</a></div>`})():''}
+   ${o.estado==='terminada'&&!o.pagado?`<a class="btn ghost block" href="${waLink(notaServicio(o),o.phone)}" target="_blank" rel="noopener">Mandar nota de servicio por WhatsApp</a>`:''}
+   <details class="card" id="o-mas"><summary style="cursor:pointer;font-weight:700">Más opciones</summary><div class="stack" style="margin-top:12px">
    ${!['terminada','cancelada'].includes(o.estado)?`<details class="card"><summary style="cursor:pointer;font-weight:700">Cambiar fecha</summary><div class="stack" style="margin-top:10px">
      <input type="date" id="o-date" value="${esc(o.date)}"><div class="seg" id="o-slot">${['mañana','tarde'].map(x=>`<button type="button" data-slot2="${x}" aria-pressed="${o.slot===x}">${x==='mañana'?'Mañana':'Tarde'}</button>`).join('')}</div>
      <button class="btn green sm" type="button" id="o-resch">Guardar nueva fecha</button></div></details>`:''}
@@ -971,23 +1004,25 @@ function renderOrder(preservar){
      <p class="small" id="x-p">Precio al cliente: $0</p>
      <button class="btn green sm" type="button" id="x-add">Agregar al total</button></div></details>`:''}
    ${gastosOrdenHTML(o)}
-   <button class="btn ghost block" type="button" id="o-copy">Copiar resumen para el cliente</button>
+   <button class="btn ghost block" type="button" id="o-copy">Copiar resumen del servicio</button>
    ${o.estado!=='cancelada'&&o.estado!=='terminada'?`<button class="btn ghost block" type="button" id="o-cancel" style="color:var(--danger)">Cancelar orden</button>`:''}
-   ${o.estado==='cancelada'?`<button class="btn ghost block" type="button" id="o-del" style="color:var(--danger)">Borrar orden para siempre</button>`:''}
+   <button class="btn ghost block" type="button" id="o-del" style="color:var(--danger)">Borrar orden</button>
+   </div></details>
   </div>`);
-  const nb=$('#o-next');if(nb)nb.onclick=async()=>{if(nx==='camino'){salirARuta(o);return}nb.disabled=true;const pt={estado:nx};if(nx==='terminada')pt.terminadaEn=new Date().toISOString();if(await patchOrder(o.id,pt)){toast(stName(nx));if(nx==='confirmada'||nx==='terminada')asegurarFicha(Object.assign({},o,pt))}renderOrderSoon()};
+  const nb=$('#o-next');if(nb)nb.onclick=async()=>{if(nx==='camino'){salirARuta(o);return}nb.disabled=true;const pt={estado:nx},prev={estado:o.estado};if(nx==='terminada'){pt.terminadaEn=new Date().toISOString();prev.terminadaEn=null}if(await patchOrder(o.id,pt)){toastUndo(o.name+': '+stName(nx),o.id,prev);if(nx==='confirmada'||nx==='terminada')asegurarFicha(Object.assign({},o,pt))}renderOrderSoon()};
   let met='Efectivo';$('#sheet-panel').querySelectorAll('[data-met]').forEach(b=>b.onclick=()=>{met=b.dataset.met;$('#sheet-panel').querySelectorAll('[data-met]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
-  const pay=$('#o-pay');if(pay)pay.onclick=async()=>{const v=Number($('#o-cob').value);if(!(v>=0)){toast('Escribe cuánto cobraron');return}pay.disabled=true;if(await patchOrder(o.id,{pagado:true,cobrado:v,metodo:met,pagadoEn:new Date().toISOString()}))toast('Pago registrado');renderOrderSoon()};
+  const pay=$('#o-pay');if(pay)pay.onclick=async()=>{const v=Number($('#o-cob').value);if(!(v>=0)){toast('Escribe cuánto cobraron');return}pay.disabled=true;if(await patchOrder(o.id,{pagado:true,cobrado:v,metodo:met,pagadoEn:new Date().toISOString()}))toastUndo('Pago registrado: '+money(v),o.id,{pagado:false,cobrado:null,metodo:null,pagadoEn:null});renderOrderSoon()};
   let slot2=o.slot;$('#sheet-panel').querySelectorAll('[data-slot2]').forEach(b=>b.onclick=()=>{slot2=b.dataset.slot2;$('#sheet-panel').querySelectorAll('[data-slot2]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
   const rs=$('#o-resch');if(rs)rs.onclick=async()=>{const d=$('#o-date').value;if(!d){toast('Elige la fecha');return}if(await patchOrder(o.id,{date:d,slot:slot2}))toast('Fecha cambiada. Avísale al cliente por WhatsApp.');renderOrderSoon()};
   const xp=()=>{const c=Number($('#x-c').value)||0,h=Number($('#x-h').value)||0;return{c,p:r10(c*(1+MARGEN)+h*LABOR)}};
   ['x-c','x-h'].forEach(i=>{const e=$('#'+i);if(e)e.oninput=()=>{$('#x-p').textContent='Precio al cliente: '+money(xp().p)}});
   const xa=$('#x-add');if(xa)xa.onclick=async()=>{const n=$('#x-n').value.trim(),{c,p}=xp();if(!n||!p){toast('Escribe qué fue y su costo');return}
     const cur=orders.find(x=>x.id===o.id)||o;if(await patchOrder(o.id,{extras:[...(cur.extras||[]),{n,p,c}],total:(cur.total||0)+p,costo:costoOf(cur)+c}))toast('Cargo agregado: '+money(p));renderOrderSoon()};
-  const del=$('#o-del');if(del)del.onclick=()=>{del.outerHTML=`<div class="card stack"><b>¿Borrar ${esc(o.id)}? No se puede deshacer.</b><div class="flow"><button class="btn ghost sm" type="button" onclick="renderOrder()">No</button><button class="btn sm" style="background:var(--danger);color:var(--on-danger)" type="button" id="o-del2">Sí, borrar</button></div></div>`;$('#o-del2').onclick=async()=>{if(await deleteOrder(o.id)){toast('Orden borrada');closeSheet()}}};
-  $('#o-tel').onclick=()=>copyText(o.phone);
+  const del=$('#o-del');if(del)del.onclick=()=>{const G=gastosDe(o.id),F=o.fotos||[];del.outerHTML=`<div class="card stack" style="border-color:var(--danger)"><b>¿Borrar la orden ${esc(o.id)}?</b><p class="small">Se quita del panel, de la agenda, de Dinero, de la meta y del historial del cliente${G.length?`, junto con ${G.length} gasto${G.length===1?'':'s'}`:''}${F.length?` y ${F.length} foto${F.length===1?'':'s'}`:''}. <b>No se puede deshacer.</b></p><div class="flow"><button class="btn ghost sm" type="button" id="o-del-no">No</button><button class="btn sm" style="background:var(--danger);color:var(--on-danger)" type="button" id="o-del2">Sí, borrar</button></div></div>`;
+    $('#o-del-no').onclick=()=>renderOrder();$('#o-del2').onclick=async()=>{const b=$('#o-del2');b.disabled=true;if(await deleteOrder(o.id)){for(const g of G){await deleteGasto(g.id)}if(window.AR&&AR.fotos)F.forEach(f=>AR.fotos.borrar(f.path).catch(()=>{}));toast('Orden borrada');closeSheet();renderAll()}else b.disabled=false}};
   $('#o-copy').onclick=()=>copyText(quoteText(o,o.id)+`\nEstado: ${stName(o.estado)}`+(o.techNotes?`\nNotas: ${o.techNotes}`:''));
-  $('#o-save').onclick=async()=>{if(await patchOrder(o.id,{tecnico:$('#o-tech').value.trim(),techNotes:$('#o-notes').value.trim()}))toast('Notas guardadas')};
+  $('#sheet-panel').querySelectorAll('[data-tec2]').forEach(b=>b.onclick=async()=>{const t=b.dataset.tec2;$('#sheet-panel').querySelectorAll('[data-tec2]').forEach(x=>x.setAttribute('aria-pressed',x===b));if(await patchOrder(o.id,{tecnico:t}))toast('Técnico: '+t)});
+  $('#o-save').onclick=async()=>{if(await patchOrder(o.id,{techNotes:$('#o-notes').value.trim()}))toast('Notas guardadas')};
   const cb=$('#o-cancel');if(cb)cb.onclick=()=>{cb.outerHTML=`<div class="card stack"><b>¿Cancelar la orden ${esc(o.id)}?</b><div class="flow"><button class="btn ghost sm" type="button" onclick="renderOrder()">No</button><button class="btn sm" style="background:var(--danger);color:var(--on-danger)" type="button" id="o-cancel2">Sí, cancelar</button></div></div>`;$('#o-cancel2').onclick=async()=>{if(await patchOrder(o.id,{estado:'cancelada'}))toast('Orden cancelada');renderOrderSoon()}};
   $('#sheet-panel').querySelectorAll('[data-done]').forEach(c=>c.onchange=async()=>{
     const cur=new Set((orders.find(x=>x.id===o.id)||o).done||[]);c.checked?cur.add(c.dataset.done):cur.delete(c.dataset.done);
@@ -1002,7 +1037,7 @@ function clientMsg(o){
   const first=(o.name||'').split(' ')[0];
   const m={pendiente:`Hola ${first}, somos AgroRuta Móvil. Recibimos tu pedido ${o.id}. ¿Te confirmamos el servicio para el ${fmtDate(o.date)} por la ${o.slot}?`,
     confirmada:`Hola ${first}, tu servicio ${o.id} quedó confirmado para el ${fmtDate(o.date)} por la ${o.slot}. Total estimado ${money(o.total||0)}.`,
-    camino:`Hola ${first}, el técnico de AgroRuta va en camino a ${o.place||o.muni}${o.llegada?'. Llega aproximadamente a las '+horaTxt(o.llegada):'.'}`,
+    camino:(t=>/\.$/.test(t)?t:t+'.')(`Hola ${first}, el técnico de AgroRuta ya va en camino a tu servicio en ${o.muni||'tu lugar'}${o.place?' ('+o.place+')':''}${o.llegada?'. Llega aproximadamente a las '+horaTxt(o.llegada):''}`),
     servicio:`Hola ${first}, ya estamos trabajando en tu máquina.`,
     terminada:notaServicio(o),
     cancelada:`Hola ${first}, tu servicio ${o.id} quedó cancelado. Cuando gustes lo reagendamos.`};
@@ -1029,7 +1064,7 @@ function readPaste(){
    <dt>Dónde</dt><dd>${esc(d.muni)}${d.place?' · '+esc(d.place):''}</dd><dt>Total</dt><dd><b>${money(q.total)}</b></dd></dl></div>
    ${vio!==null&&vio!==q.total?`<div class="note">El cliente vio <b>${money(vio)}</b> en su cotización; con los precios de hoy sale en <b>${money(q.total)}</b>. Platíquenlo con él al confirmar.</div>`:''}
    <button class="btn green block" type="button" id="pp-save">Registrar orden</button>`;
-  $('#pp-save').onclick=async()=>{const b=$('#pp-save');b.disabled=true;await saveOrder(buildOrder(d,folio,'whatsapp'));toast('Orden '+folio+' registrada');closeSheet();tFilter='pendiente';renderTecnico()};
+  $('#pp-save').onclick=async()=>{const b=$('#pp-save');b.disabled=true;await saveOrder(buildOrder(d,folio,'whatsapp'));toast('Orden '+folio+' registrada');closeSheet();tFilter='pendiente';if(view!=='tecnico')location.hash='tecnico';else renderTecnico()};
 }
 function renderOrderSoon(){setTimeout(()=>{if(!$('#sheet').hidden)renderOrder()},60)}
 function openSheet(html){$('#sheet-panel').innerHTML=html;$('#sheet').hidden=false;document.body.style.overflow='hidden'}
@@ -1195,34 +1230,38 @@ const inR=(d,[a,b])=>d>=a&&d<b;
 const dLocal=s=>{if(!s)return new Date(0);if(/^\d{4}-\d{2}-\d{2}$/.test(s)){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d,12)}return new Date(s)};
 function finanzas(p){
   const R=perRange(p),done=orders.filter(o=>o.estado==='terminada'&&inR(doneAt(o),R));
-  const pagos=orders.filter(o=>o.pagado&&o.estado!=='cancelada'&&inR(new Date(o.pagadoEn||o.terminadaEn||o.updated),R));
-  const gs=gastos.filter(g=>inR(dLocal(g.fecha),R));
-  const vendido=done.reduce((a,o)=>a+(o.total||0),0),costoEst=done.reduce((a,o)=>a+costoOf(o),0);
-  const entro=pagos.reduce((a,o)=>a+(o.cobrado??o.total??0),0),salio=gs.reduce((a,g)=>a+(Number(g.monto)||0),0);
+  const gs=gastos.filter(g=>inR(dLocal(g.fecha),R)),gen=gastosGenerales(R);
+  const C=done.map(cuentas),S=k=>C.reduce((a,x)=>a+x[k],0);
+  const vendido=done.reduce((a,o)=>a+(o.total||0),0),cobrado=done.filter(o=>o.pagado).reduce((a,o)=>a+cobroOf(o),0);
   const porCobrar=done.filter(o=>!o.pagado).reduce((a,o)=>a+(o.total||0),0);
+  const ingresos=S('cobro'),ref=S('ref'),cam=S('cam'),otros=S('otros'),general=gen.reduce((a,g)=>a+(Number(g.monto)||0),0);
+  const salio=gs.reduce((a,g)=>a+(Number(g.monto)||0),0);
   const byT={};gs.forEach(g=>{byT[g.tipo]=(byT[g.tipo]||0)+(Number(g.monto)||0)});
   const byM={};done.forEach(o=>{const n=(mach(o.machine)||{}).n||'Otro';byM[n]=(byM[n]||0)+1});
-  return{R,done,pagos,gs,vendido,costoEst,est:vendido-costoEst,entro,salio,real:entro-salio,porCobrar,byT,byM};
+  return{R,done,gs,vendido,cobrado,porCobrar,ingresos,ref,cam,otros,general,salio,gan:ingresos-ref-cam-otros-general,
+    refCalc:C.some(x=>!x.refR&&x.ref>0),camCalc:C.some(x=>!x.camR&&x.cam>0),byT,byM};
 }
 
 /* ---------- vista dinero ---------- */
-let gDraft={tipo:'diesel',orden:'',fecha:''},gFile=null,gBusy=false;
+let gDraft={tipo:'diesel',orden:'',fecha:''},gFile=null,gBusy=false,gOpen=false;
 function renderDinero(){
   const F=finanzas(resPer),perN=(PERS.find(x=>x[0]===resPer)||[])[1];
   const recientes=orders.filter(o=>o.estado!=='cancelada'&&Math.abs(dLocal(o.date)-Date.now())<21*864e5).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   if(!gDraft.fecha)gDraft.fecha=todayISO();
   const lst=F.gs.slice().sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||'')||(b.created||'').localeCompare(a.created||''));
   $('#di-body').innerHTML=`<div class="chips" id="di-per">${PERS.map(([k,n])=>`<button type="button" class="chip" data-per="${k}" aria-pressed="${resPer===k}">${n}</button>`).join('')}</div>
-   <div class="cmp"><div><span>Ganancia real</span><b class="${F.real<0?'neg':''}" style="color:var(--green)">${money(F.real)}</b><span>Cobrado ${money(F.entro)} − gastos ${money(F.salio)}</span></div>
-   <div><span>Ganancia estimada</span><b>${money(F.est)}</b><span>Según precios y costos de la app</span></div></div>
-   ${F.gs.length===0&&F.entro>0?`<div class="note">Todavía no hay gastos registrados en este periodo, por eso la ganancia real sale igual a lo cobrado. Anoten el diésel y las refacciones abajo.</div>`:''}
-   <div class="card stack"><h3>Resumen · ${esc(perN.toLowerCase())}</h3><dl class="kv">
-    <dt>Servicios terminados</dt><dd><b>${F.done.length}</b>${Object.keys(F.byM).length?' <span class="muted small">('+Object.entries(F.byM).map(([k,v])=>v+' '+esc(k.toLowerCase())).join(', ')+')</span>':''}</dd>
-    <dt>Vendido</dt><dd>${money(F.vendido)}</dd><dt>Cobrado</dt><dd>${money(F.entro)}</dd><dt>Por cobrar</dt><dd>${money(F.porCobrar)}</dd>
-    <dt>Costos estimados</dt><dd>${money(F.costoEst)}</dd><dt>Gastos reales</dt><dd>${money(F.salio)}</dd>
-    ${Object.entries(F.byT).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<dt class="small">· ${esc(gTipo(k))}</dt><dd class="small">${money(v)}</dd>`).join('')}
-   </dl><button class="btn ghost sm" type="button" id="di-copy">Copiar resumen para el grupo</button></div>
-   <div class="card stack" id="g-form"><h3>Registrar gasto</h3>
+    <div class="card stack" style="gap:10px"><span class="muted">Ganancia · ${esc(perN.toLowerCase())}</span><b style="font:800 40px/1 var(--f-display);color:var(--green)" class="${F.gan<0?'neg':''}">${money(F.gan)}</b>
+     <dl class="kv"><dt>Servicios terminados</dt><dd><b>${F.done.length}</b>${Object.keys(F.byM).length?' <span class="muted small">('+Object.entries(F.byM).map(([k,v])=>v+' '+esc(k.toLowerCase())).join(', ')+')</span>':''}</dd>
+     <dt>Ingresos</dt><dd>${money(F.ingresos)}${F.porCobrar?` <span class="muted small">(${money(F.porCobrar)} por cobrar)</span>`:''}</dd>
+     <dt>Refacciones</dt><dd>− ${money(F.ref)}${F.refCalc?' <span class="muted small">(con calculados)</span>':''}</dd>
+     <dt>Camioneta</dt><dd>− ${money(F.cam)}${F.camCalc?' <span class="muted small">(con calculados)</span>':''}</dd>
+     ${F.otros?`<dt>Otros de servicios</dt><dd>− ${money(F.otros)}</dd>`:''}
+     <dt>Gastos generales</dt><dd>− ${money(F.general)}</dd>
+     <dt><b>Ganancia</b></dt><dd><b style="color:var(--green)">${money(F.gan)}</b></dd></dl>
+     <p class="muted small">“Calculados” = lo que estima la app cuando no anotaron el gasto real de ese servicio. Es el mismo número que ven en el Panel y en la meta.</p>
+     <button class="btn ghost sm" type="button" id="di-copy">Copiar resumen para el grupo</button></div>
+    ${gOpen?'':`<button class="btn green block" type="button" id="g-open">+ Registrar gasto</button>`}
+   ${gOpen?`<div class="card stack" id="g-form"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3>Registrar gasto</h3><button class="btn ghost sm" type="button" id="g-close">Cerrar</button></div>
     <label class="f">¿Cuánto fue? <span class="h">Pesos</span><input type="number" inputmode="decimal" step="any" min="0" id="g-monto" placeholder="0" style="font-size:24px;font-weight:700"></label>
     <div class="stack" style="gap:6px"><b>¿En qué?</b><div class="chips" style="flex-wrap:wrap" id="g-tipos">${GTIPOS.map(([k,n])=>`<button type="button" class="chip" data-gt="${k}" aria-pressed="${gDraft.tipo===k}">${n}</button>`).join('')}</div></div>
     <label class="f">Fecha<input type="date" id="g-fecha" value="${esc(gDraft.fecha)}"></label>
@@ -1230,14 +1269,17 @@ function renderDinero(){
     <label class="f">¿De qué servicio? <span class="h">Opcional. Así ven la ganancia real de cada servicio</span><select id="g-orden"><option value="">General (no es de un servicio)</option>${recientes.map(o=>`<option value="${esc(o.id)}" ${gDraft.orden===o.id?'selected':''}>${esc(fmtDate(o.date))} · ${esc(o.name)} · ${esc((mach(o.machine)||{}).n||'')}</option>`).join('')}</select></label>
     ${window.AR&&AR.fotos?`<div class="flow"><button class="btn ghost sm" type="button" id="g-foto">${gFile?'Ticket listo ✓':'Foto del ticket'}</button><span class="muted small" style="align-self:center">Opcional</span></div><input type="file" accept="image/*" id="g-file" hidden>`:''}
     <p class="err" id="g-err" hidden></p>
-    <button class="btn green block" type="button" id="g-save" ${gBusy?'disabled':''}>${gBusy?'Guardando…':'Guardar gasto'}</button></div>
+    <button class="btn green block" type="button" id="g-save" ${gBusy?'disabled':''}>${gBusy?'Guardando…':'Guardar gasto'}</button></div>`:''}
    <div class="card stack"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3>Gastos · ${esc(perN.toLowerCase())}</h3><b style="font-variant-numeric:tabular-nums">${money(F.salio)}</b></div>
     <div id="g-list">${lst.length?lst.map(g=>{const o=g.orden&&orders.find(x=>x.id===g.orden);return`<div class="gs" data-g="${esc(g.id)}"><span><b>${esc(gTipo(g.tipo))}</b>${g.nota?' · '+esc(g.nota):''}</span><span class="m">${money(Number(g.monto)||0)}</span>
       <span class="s">${esc(fmtDate(g.fecha))}${o?' · '+esc(o.name):''}${g.quien?' · '+esc(String(g.quien).split('@')[0]):''}</span><span class="flow" style="display:flex;gap:6px">${g.foto?`<button class="btn ghost sm" type="button" data-gf="${esc(g.id)}" aria-label="Ver ticket">🧾</button>`:''}<button class="btn ghost sm" type="button" data-gd="${esc(g.id)}" aria-label="Borrar gasto" style="color:var(--danger)">✕</button></span></div>`}).join('')
       :`<p class="muted">No hay gastos en este periodo.</p>`}</div>
     ${gastos.length?`<button class="btn ghost sm" type="button" id="g-csv">Descargar todos los gastos (Excel)</button>`:''}</div>`;
   const B=$('#di-body');
+  const go=$('#g-open');if(go)go.onclick=()=>{gOpen=true;renderDinero();setTimeout(()=>{const m=$('#g-monto');if(m){m.scrollIntoView({block:'center'});m.focus()}},60)};
+  const gc=$('#g-close');if(gc)gc.onclick=()=>{gOpen=false;renderDinero()};
   B.querySelectorAll('[data-per]').forEach(b=>b.onclick=()=>{resPer=b.dataset.per;renderDinero()});
+  if(gOpen){
   B.querySelectorAll('[data-gt]').forEach(b=>b.onclick=()=>{gDraft.tipo=b.dataset.gt;B.querySelectorAll('[data-gt]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
   $('#g-fecha').onchange=e=>gDraft.fecha=e.target.value;$('#g-orden').onchange=e=>gDraft.orden=e.target.value;
   const gf=$('#g-foto');if(gf){$('#g-file').onchange=e=>{gFile=e.target.files[0]||null;gf.textContent=gFile?'Ticket listo ✓':'Foto del ticket'};gf.onclick=()=>$('#g-file').click()}
@@ -1248,12 +1290,13 @@ function renderDinero(){
     const g={id:newGid(),monto,tipo:gDraft.tipo,fecha:$('#g-fecha').value,nota:$('#g-nota').value.trim(),orden:$('#g-orden').value||''};
     gBusy=true;$('#g-save').disabled=true;$('#g-save').textContent='Guardando…';
     try{if(gFile&&window.AR&&AR.fotos){try{g.foto=await AR.fotos.subir('gastos',gFile,g.id)}catch(e){toast('El ticket no se pudo subir; el gasto sí se guarda.')}}
-      if(await saveGasto(g)){gFile=null;gDraft.orden='';toast('Gasto guardado: '+money(monto))}}
+      if(await saveGasto(g)){gFile=null;gDraft.orden='';gOpen=false;toast('Gasto guardado: '+money(monto))}}
     finally{gBusy=false;renderDinero()}
   };
+  }
   B.querySelectorAll('[data-gd]').forEach(b=>b.onclick=()=>{const id=b.dataset.gd;b.outerHTML=`<button class="btn sm" type="button" style="background:var(--danger);color:var(--on-danger)" id="gd2">¿Borrar?</button>`;$('#gd2').onclick=async()=>{if(await deleteGasto(id)){toast('Gasto borrado');renderDinero()}}});
   B.querySelectorAll('[data-gf]').forEach(b=>b.onclick=()=>{const g=gastos.find(x=>x.id===b.dataset.gf);if(g&&g.foto)verFoto(g.foto,'Ticket · '+gTipo(g.tipo)+' · '+money(g.monto),null)});
-  $('#di-copy').onclick=()=>copyText(`*AgroRuta · ${perN}*\nServicios terminados: ${F.done.length}\nVendido: ${money(F.vendido)}\nCobrado: ${money(F.entro)}\nPor cobrar: ${money(F.porCobrar)}\nGastos: ${money(F.salio)}${Object.entries(F.byT).map(([k,v])=>`\n  · ${gTipo(k)}: ${money(v)}`).join('')}\n*Ganancia real: ${money(F.real)}*\nGanancia estimada: ${money(F.est)}`);
+  $('#di-copy').onclick=()=>copyText(`*AgroRuta · ${perN}*\nServicios terminados: ${F.done.length}\nIngresos: ${money(F.ingresos)}${F.porCobrar?' ('+money(F.porCobrar)+' por cobrar)':''}\nRefacciones: ${money(F.ref)}\nCamioneta: ${money(F.cam)}${F.otros?'\nOtros de servicios: '+money(F.otros):''}\nGastos generales: ${money(F.general)}\n*Ganancia: ${money(F.gan)}*`);
   const cv=$('#g-csv');if(cv)cv.onclick=()=>{const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';const rows=[['Fecha','Tipo','Monto','Nota','Servicio','Cliente','Registró']].concat(gastos.slice().sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||'')).map(g=>{const o=orders.find(x=>x.id===g.orden);return[g.fecha,gTipo(g.tipo),g.monto,g.nota,g.orden,o?o.name:'',g.quien]}));
     const u=URL.createObjectURL(new Blob(['﻿'+rows.map(r=>r.map(q).join(',')).join('\r\n')],{type:'text/csv'}));const a=document.createElement('a');a.href=u;a.download='gastos-agroruta-'+todayISO()+'.csv';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove()},1000)};
 }
@@ -1263,16 +1306,16 @@ let agOff=0,agTec='';
 function renderAgenda(){
   const n=new Date(),mon=new Date(n.getFullYear(),n.getMonth(),n.getDate()-((n.getDay()+6)%7)+agOff*7),t=todayISO();
   const days=[...Array(7)].map((_,i)=>isoD(addDays(mon,i))),sun=addDays(mon,6);
-  const tecs=[...new Set(orders.map(o=>(o.tecnico||'').trim()).filter(Boolean))].sort();
+  const tecs=['Hernán','Federico'];
   if(agTec&&agTec!=='-'&&!tecs.includes(agTec))agTec='';
-  const wk=orders.filter(o=>days.includes(o.date)&&o.estado!=='cancelada'&&(!agTec||(agTec==='-'?!(o.tecnico||'').trim():(o.tecnico||'').trim()===agTec)));
+  const wk=orders.filter(o=>days.includes(o.date)&&o.estado!=='cancelada'&&(!agTec||tecDe(o,agTec)));
   const f=d=>d.toLocaleDateString('es-MX',{day:'numeric',month:'short'});
   $('#ag-title').innerHTML=`${f(mon)} – ${f(sun)}<small>${agOff===0?'Esta semana':agOff===1?'La próxima semana':agOff===-1?'La semana pasada':(agOff>0?'En '+agOff+' semanas':'Hace '+(-agOff)+' semanas')}</small>`;
-  $('#ag-filters').innerHTML=(agOff!==0?`<button type="button" class="chip" id="ag-hoy">← Volver a esta semana</button>`:'')+[['','Todos'],...tecs.map(x=>[x,x]),...(tecs.length?[['-','Sin asignar']]:[])].map(([k,v])=>`<button type="button" class="chip" data-tec="${esc(k)}" aria-pressed="${agTec===k}">${esc(v)}</button>`).join('');
+  $('#ag-filters').innerHTML=(agOff!==0?`<button type="button" class="chip" id="ag-hoy">← Volver a esta semana</button>`:'')+[['','Todos'],...tecs.map(x=>[x,x]),['-','Sin asignar']].map(([k,v])=>`<button type="button" class="chip" data-tec="${esc(k)}" aria-pressed="${agTec===k}">${esc(v)}</button>`).join('');
   const pend=wk.filter(o=>o.estado==='pendiente').length,tot=wk.reduce((a,o)=>a+(o.total||0),0);
   $('#ag-kpis').innerHTML=`<div class="kpi"><b>${wk.length}</b><span>Servicios</span></div><div class="kpi"><b>${pend}</b><span>Por confirmar</span></div><div class="kpi"><b>${tot>=10000?'$'+(tot/1000).toFixed(0)+'k':money(tot)}</b><span>Total semana</span></div>`;
   const item=o=>{const m=mach(o.machine);return`<button type="button" class="ag-o st-${o.estado}" data-o="${esc(o.id)}"><b>${esc(o.name)}</b><span class="pill st-${o.estado}">${o.estado==='terminada'?(o.pagado?'Pagado':'Por cobrar'):stName(o.estado)}</span>
-    <span class="s">${esc(m?m.n:'')}${o.model?' '+esc(o.model):''} · ${esc(o.muni)}${o.tecnico?' · 👷 '+esc(o.tecnico):''}${o.urgent?' · <b style="color:var(--warn)">URGENTE</b>':''}</span></button>`};
+    <span class="s">${esc(m?m.n:'')}${o.model?' '+esc(o.model):''} · ${esc(o.muni)}${tecNorm(o.tecnico)?' · 👷 '+esc(tecNorm(o.tecnico)):''}${o.urgent?' · <b style="color:var(--warn)">URGENTE</b>':''}</span></button>`};
   $('#ag-days').innerHTML=days.map(d=>{const L=wk.filter(o=>o.date===d),ma=L.filter(o=>o.slot!=='tarde'),ta=L.filter(o=>o.slot==='tarde'),dt=dLocal(d);
     return`<div class="day${d===t?' hoy':''}${d<t?' past':''}"><div class="dh"><b>${d===t?'Hoy · ':''}${esc(dt.toLocaleDateString('es-MX',{weekday:'long',day:'numeric'}))}</b><span>${L.length?L.length+' · '+money(L.reduce((a,o)=>a+(o.total||0),0)):''}</span></div>
      ${L.length?(ma.length?`<div class="slot">Mañana</div>${ma.map(item).join('')}`:'')+(ta.length?`<div class="slot">Tarde</div>${ta.map(item).join('')}`:''):`<div class="libre"><span>Libre</span>${d>=t?`<button class="btn ghost sm" type="button" data-new="${d}">+ Agendar</button>`:''}</div>`}
@@ -1334,7 +1377,7 @@ function gastosOrdenHTML(o){
   const G=gastosDe(o.id),tg=G.reduce((a,g)=>a+(Number(g.monto)||0),0);
   return`<details class="card"${G.length?' open':''}><summary style="cursor:pointer;font-weight:700">Gastos de este servicio${G.length?' · '+money(tg):''}</summary><div class="stack" style="margin-top:10px">
    ${G.length?`<div>${G.map(g=>`<div class="gs"><span><b>${esc(gTipo(g.tipo))}</b>${g.nota?' · '+esc(g.nota):''}</span><span class="m">${money(Number(g.monto)||0)}</span><span class="s">${esc(fmtDate(g.fecha))}</span></div>`).join('')}</div>
-     <p>Ganancia real de este servicio: <b class="${(o.pagado?(o.cobrado??o.total):o.total)-tg<0?'neg':''}" style="color:var(--green)">${money((o.pagado?(o.cobrado??o.total??0):(o.total||0))-tg)}</b> <span class="muted small">(${o.pagado?'cobrado':'total'} − gastos)</span></p>`:'<p class="muted small">Anoten aquí el diésel y las refacciones que compraron para este servicio.</p>'}
+     <p class="small">Ganancia de este servicio ya con estos gastos: <b style="color:var(--green)">${money(cuentas(o).gan)}</b></p>`:'<p class="muted small">Anoten aquí el diésel y las refacciones que compraron para este servicio.</p>'}
    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><input type="number" inputmode="decimal" step="any" min="0" id="og-monto" placeholder="$ monto" aria-label="Monto del gasto"><select id="og-tipo" aria-label="Tipo de gasto">${GTIPOS.map(([k,n])=>`<option value="${k}" ${k==='refacciones'?'selected':''}>${n}</option>`).join('')}</select></div>
    <input type="text" id="og-nota" placeholder="Nota (opcional)">
    <button class="btn green sm" type="button" id="og-add">Agregar gasto</button></div></details>`;
@@ -1360,7 +1403,7 @@ async function renderCuenta(){
    <div class="stack" style="gap:8px"><b>Notificaciones</b><p class="small">${NOTIF_TXT[st]||NOTIF_TXT.no}</p>
     ${st==='apagado'?`<button class="btn green block" type="button" id="cu-on">Activar notificaciones</button>`:''}
     ${st==='activo'?`<div class="flow"><button class="btn ghost sm" type="button" id="cu-test">Mandar prueba</button><button class="btn ghost sm" type="button" id="cu-off">Apagar aquí</button></div>`:''}</div>
-   <div class="stack" style="gap:8px;border-top:1px solid var(--line);padding-top:12px"><span class="small">Sesión: <b>${esc(AR.email())}</b></span><span class="muted small">Versión 1111-0259</span><button class="btn ghost sm" type="button" id="cu-out">Cerrar sesión</button></div>`;
+   <div class="stack" style="gap:8px;border-top:1px solid var(--line);padding-top:12px"><span class="small">Sesión: <b>${esc(AR.email())}</b></span><span class="muted small">Versión 1111-0543</span><button class="btn ghost sm" type="button" id="cu-out">Cerrar sesión</button></div>`;
   const on=$('#cu-on');if(on)on.onclick=async()=>{on.disabled=true;on.textContent='Activando… (si sale un aviso, dale Permitir)';let msg='';
     try{await AR.push.activar();toast('Notificaciones activadas');AR.push.prueba().catch(()=>{})}
     catch(e){const m=e&&e.message||'';msg=m==='permiso'?'No se dio permiso. En la Mac: Ajustes del Sistema → Notificaciones → AgroRuta Equipo → Permitir. En iPhone: Ajustes → Notificaciones → AR Equipo.':m==='permiso-tiempo'?'No contestaste el aviso de permiso. Búscalo arriba a la derecha de la pantalla o revisa Ajustes del Sistema → Notificaciones.':m==='suscribir'?'El navegador no respondió al registrar el aparato. Cierra la app, ábrela otra vez e intenta de nuevo.':m==='guardar'?'No se pudo guardar en la nube. Revisa tu señal e intenta otra vez.':'No se pudieron activar: '+m}
@@ -1433,7 +1476,7 @@ async function migrarClientes(){
 /* vista Clientes */
 let cliQ='',fichaId=null,cliEdit=null;
 function vendidoDe(c){return ordenesDe(c).filter(o=>o.estado==='terminada').reduce((a,o)=>a+cobroOf(o),0)}
-function maqNombre(m){const mm=mach(m.machine);const b=m.brand&&BRANDS[m.brand]&&!['otra','potra'].includes(m.brand)?BRANDS[m.brand].n.replace(/ \(.*\)| y similares.*$/,''):'';return[(mm?mm.n:'Máquina'),m.model||b].filter(Boolean).join(' · ')}
+function maqNombre(m){const mm=mach(m.machine);const z=SIZES[m.machine]&&m.hp?sizeOf({machine:m.machine,hp:m.hp}):null;const b=m.brand&&BRANDS[m.brand]&&!['otra','potra'].includes(m.brand)?BRANDS[m.brand].n.replace(/ \(.*\)| y similares.*$/,''):'';return[(mm?mm.n:'Máquina')+(z?' '+z.n.toLowerCase():''),m.model||b].filter(Boolean).join(' · ')}
 function municipiosHTML(){
   const g={};clientes.forEach(c=>{const k=c.muni||'Sin municipio';g[k]=g[k]||{n:0,v:0};g[k].n++;g[k].v+=vendidoDe(c)});
   const L=Object.entries(g).sort((a,b)=>b[1].n-a[1].n||b[1].v-a[1].v);if(!L.length)return'';const mx=Math.max(...L.map(x=>x[1].n));
@@ -1541,12 +1584,13 @@ function ordenPara(c,m){
 /* buscar cliente al iniciar Nueva orden */
 function buscarClienteHTML(){
   const c=draft.clienteId&&clientes.find(x=>x.id===draft.clienteId);
-  return`<a class="btn ghost block" href="#cotizar" style="min-height:46px">Solo cotizar (sin hacer orden) →</a>
+  return`<div class="flow"><a class="btn ghost sm" href="#cotizar">Solo cotizar</a><button class="btn ghost sm" type="button" id="bc-paste">Pegar pedido de WhatsApp</button></div>
   <div class="card stack" style="gap:10px">${c?`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span>Cliente: <b>${esc(c.nombre)}</b> · ${esc(c.tel)}</span><button class="btn ghost sm" type="button" id="bc-quitar">Quitar</button></div>
     ${(c.maquinas||[]).length?`<b>Sus máquinas</b><div class="stack" style="gap:8px">${c.maquinas.map(m=>`<button type="button" class="btn ghost block" data-bcm="${esc(m.id)}" style="justify-content:flex-start">${esc(maqNombre(m))}${m.serie?' · serie '+esc(m.serie):''}</button>`).join('')}</div><p class="muted small">O elige otra máquina abajo.</p>`:'<p class="muted small">No tiene máquinas registradas. Elige el tipo abajo.</p>'}`
     :`<b>¿Es un cliente registrado?</b><input type="text" id="bc-q" placeholder="Busca por nombre o teléfono" autocomplete="off"><div id="bc-res" class="stack" style="gap:6px"></div>`}</div>`;
 }
 function bindBuscarCliente(){
+  const bp=$('#bc-paste');if(bp)bp.onclick=openPaste;
   const q=$('#bc-q');if(q){q.oninput=()=>{const t=q.value.trim().toLowerCase(),R=$('#bc-res');if(t.length<2){R.innerHTML='';return}
     const L=clientes.filter(c=>`${c.nombre} ${c.tel} ${c.phone||''}`.toLowerCase().includes(t)||(t.replace(/\D/g,'').length>=3&&c.tel.includes(t.replace(/\D/g,'')))).slice(0,6);
     R.innerHTML=L.length?L.map(c=>`<button type="button" class="ag-o" data-bc="${esc(c.id)}"><b>${esc(c.nombre)}</b><span class="muted small">${esc(c.tel)}</span><span class="s">${esc(c.muni||'')}${(c.maquinas||[]).length?' · '+esc(c.maquinas.map(maqNombre).join(', ')):''}</span></button>`).join(''):'<p class="muted small">No hay ningún cliente con eso. Sigue y se registra solo al guardar la orden.</p>';
@@ -1569,8 +1613,8 @@ function salirARuta(o){
     <p class="muted small">El cliente ve la hora en su app. También le puedes mandar el aviso por WhatsApp.</p></div>`);
     $('#sr-m').onclick=()=>{if(lleg-Date.now()>15*60000){lleg=new Date(lleg-15*60000);$('#sr-h').textContent=horaTxt(lleg)}};
     $('#sr-p').onclick=()=>{lleg=new Date(+lleg+15*60000);$('#sr-h').textContent=horaTxt(lleg)};
-    $('#sr-ok').onclick=async()=>{const b=$('#sr-ok');b.disabled=true;const pt={estado:'camino',salioEn:new Date().toISOString(),llegada:lleg.toISOString()};
-      if(await patchOrder(o.id,pt)){const oo=Object.assign({},o,pt);openId=null;openSheet(`<div class="stack"><h2>¡En camino!</h2><p>Llegada aprox. <b>${esc(horaTxt(lleg))}</b><br>${esc(o.name)} ya lo ve en su app.</p>
+    $('#sr-ok').onclick=async()=>{const b=$('#sr-ok');b.disabled=true;const prevE=o.estado;const pt={estado:'camino',salioEn:new Date().toISOString(),llegada:lleg.toISOString()};
+      if(await patchOrder(o.id,pt)){toastUndo(o.name+': En camino',o.id,{estado:prevE,salioEn:null,llegada:null});const oo=Object.assign({},o,pt);openId=null;openSheet(`<div class="stack"><h2>¡En camino!</h2><p>Llegada aprox. <b>${esc(horaTxt(lleg))}</b><br>${esc(o.name)} ya lo ve en su app.</p>
         <a class="btn green block" href="${waLink(clientMsg(oo),o.phone)}" target="_blank" rel="noopener">Avisar por WhatsApp</a>
         <a class="btn ghost block" href="https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=${encodeURIComponent(stopOf(o))}" target="_blank" rel="noopener">Abrir ruta en Maps</a>
         <button class="btn ghost block" type="button" onclick="closeSheet()">Listo</button></div>`)}else b.disabled=false};
@@ -1647,7 +1691,7 @@ function route(){
 }
 function renderView(){if(view==='ajustes')renderAjustes();if(view==='clientes')renderClientes();if(view==='agenda')renderAgenda();if(view==='dinero')renderDinero();if(view==='maquinas')renderMaquinas();if(view==='inicio')renderHomeNext();if(view==='pedir')renderPedir();if(view==='cotizar')renderCotizar();if(view==='tecnico')renderTecnico()}
 function renderAll(){if(view==='clientes'&&!$('#v-clientes').contains(document.activeElement))renderClientes();if(!$('#sheet').hidden&&fichaId&&!cliEdit&&!openId)renderFicha();if(view==='tecnico')renderTecnico();if(view==='inicio')renderHomeNext();if(view==='agenda')renderAgenda();if(view==='dinero'&&!gBusy&&!$('#di-body').contains(document.activeElement))renderDinero();if(!$('#sheet').hidden&&openId&&!$('#sheet-panel').contains(document.activeElement&&document.activeElement.matches('input,textarea,select')?document.activeElement:null))renderOrder(true)}
-addEventListener('hashchange',()=>{if(location.hash==='#pedir'&&lastFolio){lastFolio=null}if(!$('#sheet').hidden)closeSheet();route()});
+addEventListener('hashchange',()=>{if(location.hash==='#pedir'&&lastFolio){lastFolio=null}if(!$('#sheet').hidden)closeSheet();if($('#t-undo')){$('#toast').hidden=true;clearTimeout(toast.t)}route()});
 document.querySelectorAll(TEAM?'[data-cli]':'[data-team]').forEach(e=>e.remove());if(TEAM)document.body.classList.add('team');(()=>{let on=false;try{on=localStorage.getItem('ar_big')==='1'}catch(e){}const set=v=>{document.documentElement.classList.toggle('big',v);$('#big').setAttribute('aria-pressed',v)};set(on);$('#big').onclick=()=>{on=!on;set(on);try{localStorage.setItem('ar_big',on?'1':'0')}catch(e){}toast(on?'Letra grande':'Letra normal')}})();
 route();
 initData();

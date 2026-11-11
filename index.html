@@ -486,7 +486,7 @@ function quoteText(d,folio){
   t+=`*Total estimado: ${money(q.total)}*\n`;
   if(folio){t+=`Fecha: ${fmtDate(d.date)}, ${d.slot}\nLugar: ${d.place||d.muni}\nCliente: ${d.name} · ${d.phone}\n${d.notes?'Notas: '+d.notes+'\n':''}`}
   t+='Refacciones especiales se cotizan aparte.';
-  if(folio)t+=`\n\nCódigo (no lo borres): AR1.${encodeOrder(d,folio)}`;
+  if(folio&&!TEAM)t+=`\n\nCódigo (no lo borres): AR1.${encodeOrder(d,folio)}`;
   return t;
 }
 
@@ -592,8 +592,8 @@ function renderPedir(){
     $('#wiz-title').textContent='¡Pedido registrado!';$('#wiz-sub').textContent='';$('#wiz-prog').hidden=true;$('#wiz-bar').hidden=true;
     const o=orders.find(x=>x.id===lastFolio)||lastOrder;
     body.innerHTML=`<div class="card done"><span class="muted">Tu folio es</span><div class="folio">${esc(lastFolio)}</div><p>Te llamamos o escribimos al <b>${esc(o?.phone||'')}</b> para confirmar el horario.</p></div>
-    ${!TEAM?`<div class="note"><b>Último paso:</b> mándanos tu pedido por WhatsApp para confirmar tu cita.</div>`:!o?.synced&&mode!=='db'?`<div class="note">Este pedido se guardó solo en este celular. Mándalo por WhatsApp para que el equipo lo reciba.</div>`:''}
-    <a class="btn green block" href="${waLink(quoteText(o||draft,lastFolio))}" target="_blank" rel="noopener">Enviar pedido por WhatsApp</a>
+    <div class="note">${navigator.onLine===false?'<b>Estás sin señal.</b> Tu pedido se guardó en este celular y nos llega solo en cuanto vuelva la señal. Te escribimos para confirmar.':'<b>¡Listo, ya nos llegó!</b> No tienes que hacer nada más. En <b>Inicio → Mis pedidos</b> ves cuando lo confirmemos y cuando el técnico vaya en camino.'}</div>
+    <a class="btn ghost block" href="${waLink(quoteText(o||draft,lastFolio))}" target="_blank" rel="noopener">¿Dudas? Escríbenos por WhatsApp</a>
     <button class="btn ghost block" type="button" id="w-share">Copiar pedido</button>
     <p class="muted small" style="text-align:center">WhatsApp de AgroRuta: <b>${WA_SHOW}</b></p>
     ${!TEAM&&o&&hasHours(o.machine)&&o.hours&&!maquinas.some(m=>m.machine===o.machine&&m.model===o.model&&String(m.hours)===String(o.hours))?`<button class="btn ghost block" type="button" id="w-save-mq">Guardar esta máquina en Mis máquinas</button>`:''}
@@ -1005,6 +1005,7 @@ $('#sheet').onclick=e=>{if(e.target.id==='sheet')closeSheet()};
 
 /* ---------- inicio ---------- */
 function renderHomeNext(){if(!$('#home-next'))return;
+  if(!TEAM){const hn=$('#home-next'),hero=$('#v-inicio .hero'),act=orders.some(o=>!['terminada','cancelada'].includes(estCli(o)));if(hero){if(act&&hn.previousElementSibling!==hero)hero.insertAdjacentElement('afterend',hn);else if(!act&&hn.parentNode.lastElementChild!==hn)hn.parentNode.appendChild(hn)}}
   const t=todayISO();
   const up=TEAM?orders.filter(o=>o.date>=t&&!['terminada','cancelada'].includes(o.estado)).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3):orders.filter(o=>!['terminada','cancelada'].includes(o.estado)).sort((a,b)=>(a.date||'').localeCompare(b.date||'')).slice(0,5);
   if(!TEAM){const due=maquinas.map((m,ix)=>({m,di:dueInfo(m,m.updated)})).filter(x=>(x.di.date-Date.now())/864e5<=21);
