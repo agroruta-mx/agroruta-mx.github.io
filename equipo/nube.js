@@ -166,7 +166,7 @@
       await s.unsubscribe();
     },
     async refrescar() { try { if (!this.soporte() || Notification.permission !== 'granted') return; const r = await swR(); const s = r && await r.pushManager.getSubscription(); if (s) await this.guardar(s) } catch (e) { } },
-    async prueba() { const { data, error } = await sb.functions.invoke('notificar', { body: { tipo: 'prueba' } }); if (error) throw error; return data }
+    async prueba() { const { data, error } = await Promise.race([sb.functions.invoke('notificar', { body: { tipo: 'prueba' } }), new Promise((_, no) => setTimeout(() => no(new Error('no contestó en 40 segundos. Revisa la pestaña Logs de notificar en Supabase.')), 40000))]); if (error) throw error; return data }
   };
 
   /* ---- fotos (bucket privado "fotos") ---- */
