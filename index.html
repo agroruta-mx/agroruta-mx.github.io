@@ -649,7 +649,24 @@ function buildOrder(d,folio,origen){
     interval:d.interval||null,junto:!!d.junto&&SMALL.includes(d.machine),brand:brandKey(d),hp:sizeOf(d)?sizeOf(d).id:null,total:q.total,traslado:q.traslado,costo:q.costo,origen:origen||'app',estado:'pendiente',tecnico:'',done:[],techNotes:'',created:new Date().toISOString(),updated:new Date().toISOString()};
 }
 const NUBE={url:'https://edknbmbzipckgbshmuha.supabase.co',key:'sb_publishable_B8O7gCqsK_LJgCPVqEew8w_HxunwAQM'};
-function enviarNube(o){try{fetch(NUBE.url+'/rest/v1/rpc/crear_pedido',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json',apikey:NUBE.key},body:JSON.stringify({p:o})}).catch(()=>{})}catch(e){}}
+function enviarNube(o){try{fetch(NUBE.url+'/rest/v1/rpc/crear_pedido',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json',apikey:NUBE.key},body:JSON.stringify({p:o})}).then(r=>{if(r.ok){const lo=localOrders.find(x=>x.id===o.folio);if(lo){lo.nube=true;saveLocal()}}}).catch(()=>{})}catch(e){}}
+let syncing=false,cliOpen=null;
+async function syncPedidos(){
+  if(TEAM||syncing)return;const L=localOrders.filter(o=>!['terminada','cancelada'].includes(o.estado));if(!L.length)return;syncing=true;
+  try{const r=await fetch(NUBE.url+'/rest/v1/rpc/estado_pedidos',{method:'POST',headers:{'Content-Type':'application/json',apikey:NUBE.key},body:JSON.stringify({folios:L.map(o=>o.id).slice(0,30)})});
+    if(!r.ok)return;const rows=await r.json();if(!Array.isArray(rows))return;const m=Object.fromEntries(rows.map(x=>[x.id,x]));let ch=false;
+    L.forEach(o=>{const x=m[o.id];
+      if(!x){if(o.nube){o.estado='cancelada';ch=true}return}
+      if(!o.nube){o.nube=true;ch=true}
+      if(x.estado==='cancelada'){o.estado='cancelada';ch=true;return}
+      if(x.estado&&x.estado!==o.estadoNube){o.estadoNube=x.estado;ch=true}
+      if(x.fecha&&x.fecha!==o.date){o.date=x.fecha;ch=true}
+      if(x.horario&&x.horario!==o.slot){o.slot=x.horario;ch=true}
+      if(x.total!=null&&Number(x.total)>0&&Number(x.total)!==o.total){o.total=Number(x.total);ch=true}});
+    if(ch){saveLocal();orders=localOrders;renderAll();if(!$('#sheet').hidden&&cliOpen&&$('#co-done')){const o=orders.find(x=>x.id===cliOpen);if(o&&o.estado!=='cancelada')renderClientOrder(o);else closeSheet()}}}
+  catch(e){}finally{syncing=false}
+}
+const estCli=o=>o.estadoNube||o.estado;
 async function saveOrder(o){
   if(!TEAM)enviarNube(o);
   let synced=false;
@@ -675,7 +692,7 @@ orders=localOrders;
 function saveLocal(){try{localStorage.setItem('ar_orders',JSON.stringify(localOrders))}catch(e){}}
 function setSync(on,t){const s=$('#sync');s.className='sync'+(on?' on':'');s.querySelector('span').textContent=t}
 async function initData(){
-  if(!TEAM){mode='local';renderAll();return}
+  if(!TEAM){mode='local';renderAll();syncPedidos();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')syncPedidos()});return}
   setSync(false,'Conectando…');
   let user=null;
   try{if(window.claude&&window.claude.use){[db,user]=await Promise.all([window.claude.use('db'),window.claude.use('user')])}}catch(e){db=null}
@@ -943,7 +960,7 @@ function readPaste(){
 }
 function renderOrderSoon(){setTimeout(()=>{if(!$('#sheet').hidden)renderOrder()},60)}
 function openSheet(html){$('#sheet-panel').innerHTML=html;$('#sheet').hidden=false;document.body.style.overflow='hidden'}
-function closeSheet(){$('#sheet').hidden=true;openId=null;document.body.style.overflow=''}
+function closeSheet(){$('#sheet').hidden=true;openId=null;if(typeof cliOpen!=='undefined')cliOpen=null;document.body.style.overflow=''}
 $('#sheet').onclick=e=>{if(e.target.id==='sheet')closeSheet()};
 
 /* ---------- inicio ---------- */
@@ -952,7 +969,7 @@ function renderHomeNext(){if(!$('#home-next'))return;
   const up=TEAM?orders.filter(o=>o.date>=t&&!['terminada','cancelada'].includes(o.estado)).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3):orders.filter(o=>!['terminada','cancelada'].includes(o.estado)).sort((a,b)=>(a.date||'').localeCompare(b.date||'')).slice(0,5);
   if(!TEAM){const due=maquinas.map((m,ix)=>({m,di:dueInfo(m,m.updated)})).filter(x=>(x.di.date-Date.now())/864e5<=21);
     const hn=$('#home-due');if(hn)hn.innerHTML=due.length?`<div class="card stack" style="border-color:var(--warn)"><h3>Se acerca tu servicio</h3>${due.map(x=>`<p><b>${esc(dueTitle(x.m,x.di))}</b><br><span class="muted">aprox. ${x.di.date.toLocaleDateString('es-MX',{day:'numeric',month:'long'})}</span></p>`).join('')}<a class="btn primary block" href="#maquinas">Ver mis máquinas</a></div>`:''}
-  $('#home-next').innerHTML=`<h3>${TEAM?'Próximos servicios':'Mis pedidos'}</h3>`+(up.length?up.map(o=>`<button type="button" class="order st-${o.estado}" data-o="${esc(o.id)}"><div class="r1"><b>${esc(o.name)}</b><span class="pill st-${o.estado}">${stName(o.estado)}</span></div><div class="r2"><span>${esc(fmtDate(o.date))} · ${esc(o.muni)}</span><span>${money(o.total||0)}</span></div></button>`).join(''):`<p class="muted">No hay servicios agendados todavía.</p>`);
+  $('#home-next').innerHTML=`<h3>${TEAM?'Próximos servicios':'Mis pedidos'}</h3>`+(up.length?up.map(o=>`<button type="button" class="order st-${o.estado}" data-o="${esc(o.id)}"><div class="r1"><b>${esc(o.name)}</b><span class="pill st-${TEAM?o.estado:estCli(o)}">${stName(TEAM?o.estado:estCli(o))}</span></div><div class="r2"><span>${esc(fmtDate(o.date))} · ${esc(o.muni)}</span><span>${money(o.total||0)}</span></div></button>`).join(''):`<p class="muted">No hay servicios agendados todavía.</p>`);
   $('#home-next').querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>openOrder(b.dataset.o));
 }
 
@@ -1020,14 +1037,18 @@ function showReminder(mq){
   $('#rm-ics').onclick=()=>downloadIcs(t,di.date,det);
 }
 function renderClientOrder(o){
-  const m=mach(o.machine);
+  const m=mach(o.machine);cliOpen=o.id;const en=estCli(o);
   openSheet(`<div class="stack"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="muted">${esc(o.id)}</span><button class="btn ghost sm" type="button" onclick="closeSheet()">Cerrar</button></div>
-   <h2>${esc(m?m.n:'Pedido')}${o.model?' · '+esc(o.model):''}</h2>
+   <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><h2>${esc(m?m.n:'Pedido')}${o.model?' · '+esc(o.model):''}</h2>${o.estado!=='terminada'?`<span class="pill st-${en}">${esc(stName(en))}</span>`:''}</div>
+   ${en==='confirmada'?'<div class="note">AgroRuta ya confirmó tu servicio.</div>':en==='camino'?'<div class="note">El técnico va en camino.</div>':''}
    <div class="card"><dl class="kv"><dt>Cuándo</dt><dd>${esc(fmtDate(o.date))}, ${esc(o.slot)}</dd><dt>Dónde</dt><dd>${esc(o.muni)}${o.place?' · '+esc(o.place):''}</dd>
    <dt>Servicios</dt><dd>${(o.services||[]).filter(id=>id!=='revision').map(id=>esc((svc(id)||{n:id}).n)).join(', ')}</dd><dt>Total</dt><dd><b>${money(o.total||0)}</b></dd></dl></div>
    ${o.estado==='terminada'?'<p class="muted">Este servicio ya está en tu historial.</p>':`<a class="btn ghost block" href="${waLink(quoteText(o,o.id))}" target="_blank" rel="noopener">Reenviar pedido por WhatsApp</a>
-   <button class="btn green block" type="button" id="co-done">Ya me hicieron el servicio</button>`}</div>`);
+   <button class="btn green block" type="button" id="co-done">Ya me hicieron el servicio</button>
+   <button class="btn ghost block" type="button" id="co-del">Quitar de mis pedidos</button>`}</div>`);
   const b=$('#co-done');if(b)b.onclick=()=>recordServiceSheet(Object.assign({},o,{folio:o.id,fecha:todayISO()}));
+  const d=$('#co-del');if(d)d.onclick=()=>{d.outerHTML=`<div class="card stack"><b>¿Quitar este pedido de tu lista?</b><p class="muted small">Solo se quita de este celular. Si quieres cancelar el servicio, avísanos por WhatsApp.</p><div class="flow"><button class="btn ghost sm" type="button" id="co-no">No</button><button class="btn sm" type="button" id="co-si" style="background:var(--danger);color:var(--on-danger)">Sí, quitar</button></div></div>`;
+    $('#co-no').onclick=()=>renderClientOrder(o);$('#co-si').onclick=()=>{const i=localOrders.findIndex(x=>x.id===o.id);if(i>=0)localOrders.splice(i,1);saveLocal();orders=localOrders;closeSheet();renderAll();toast('Pedido quitado')}};
 }
 function renderMaquinas(){
   const list=$('#mq-list');
