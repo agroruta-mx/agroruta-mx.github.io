@@ -126,7 +126,7 @@ textarea{min-height:90px;resize:vertical}
 .err{color:var(--danger);font-weight:700;font-size:15px}
 .kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
-.kpi b{display:block;font:800 26px/1 var(--f-display);font-variant-numeric:tabular-nums}
+.kpi{min-width:0}.kpi b{display:block;font:800 min(26px,7vw)/1 var(--f-display);white-space:nowrap;font-variant-numeric:tabular-nums}
 .kpi span{font-size:13px;color:var(--muted)}
 .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
 .chip{flex:none;border:2px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:8px 14px;font:700 15px var(--f-body);cursor:pointer;min-height:42px}
@@ -423,7 +423,7 @@ const waLink=(t,num=WA_NUM)=>'https://wa.me/52'+String(num).replace(/\D/g,'').sl
 
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const money=n=>'$'+Math.round(n).toLocaleString('es-MX');
+const money=n=>{const v=Math.round(Number(n)||0);return(v<0?'−$':'$')+Math.abs(v).toLocaleString('es-MX')};
 const todayISO=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)};
 const fmtDate=s=>{if(!s)return'';const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('es-MX',{weekday:'short',day:'numeric',month:'short'})};
 const mach=id=>MACHINES.find(m=>m.id===id);
@@ -830,7 +830,7 @@ function filtered(){
 const costoOf=o=>o.costo??quote(o).costo;
 const cobroOf=o=>o.pagado?(o.cobrado??o.total??0):(o.total||0);
 const ganOf=o=>cobroOf(o)-costoOf(o);
-const doneAt=o=>new Date(o.terminadaEn||o.updated);
+const doneAt=o=>{for(const v of [o.terminadaEn,o.pagadoEn,o.updated,o.date&&o.date+'T12:00:00',o.created]){if(!v)continue;const d=new Date(v);if(!isNaN(d))return d}return new Date()};
 function recordatorios(){
   const last={};orders.filter(o=>o.estado==='terminada').forEach(o=>{const k=String(o.phone||'').replace(/\D/g,'').slice(-10)+'|'+o.machine+'|'+(o.model||'').toLowerCase();const d=doneAt(o);if(!last[k]||doneAt(last[k])<d)last[k]=o});
   return Object.values(last).map(o=>({o,di:dueInfo(o,doneAt(o))})).filter(x=>{const days=(x.di.date-Date.now())/864e5;if(days>21)return false;if(x.o.recordado&&new Date(x.o.recordado)>addDays(x.di.date,-30))return false;return true}).sort((a,b)=>a.di.date-b.di.date);
@@ -860,7 +860,7 @@ function renderTecnico(){
   const ganSem=done.filter(o=>doneAt(o)>=wk).reduce((a,o)=>a+ganOf(o),0);
   const porCobrar=done.filter(o=>!o.pagado);
   const ganTot=done.reduce((a,o)=>a+ganOf(o),0),pct=Math.min(100,ganTot/META_NP300*100);
-  const k=n=>n>=10000?'$'+(n/1000).toFixed(0)+'k':money(n);
+  const k=n=>Math.abs(n)>=10000?(n<0?'−$':'$')+(Math.abs(n)/1000).toFixed(0)+'k':money(n);
   $('#t-kpis').innerHTML=`<div class="kpi"><b>${hoy}</b><span>Servicios hoy</span></div><div class="kpi"><b>${pend}</b><span>Por confirmar</span></div><div class="kpi"><b>${k(ganSem)}</b><span>Ganancia semana</span></div>
    <div class="kpi" style="grid-column:1/-1;display:flex;flex-direction:column;gap:6px"><div style="display:flex;justify-content:space-between;gap:8px;font-size:14px"><span><b style="display:inline;font-size:16px;font-family:var(--f-body)">Meta: NP300 diésel</b></span><span style="font-variant-numeric:tabular-nums">${money(ganTot)} de ${money(META_NP300)}</span></div><div style="height:10px;border-radius:5px;background:var(--surface-2);overflow:hidden"><div style="height:100%;width:${pct.toFixed(1)}%;background:var(--accent)"></div></div><span>Suma de la ganancia de los servicios terminados (${done.length})</span></div>
    ${porCobrar.length?`<button type="button" class="kpi" data-tf2="cobrar" style="grid-column:1/-1;text-align:left;cursor:pointer;border-color:var(--warn);font:inherit;color:var(--fg)"><span style="color:var(--warn);font-weight:700;font-size:15px">Por cobrar: ${money(porCobrar.reduce((a,o)=>a+(o.total||0),0))} de ${porCobrar.length} servicio${porCobrar.length===1?'':'s'} →</span></button>`:''}`;
@@ -975,7 +975,7 @@ function clientMsg(o){
     cancelada:`Hola ${first}, tu servicio ${o.id} quedó cancelado. Cuando gustes lo reagendamos.`};
   return m[o.estado]||m.pendiente;
 }
-function reminderMsg(o){const first=(o.name||'').split(' ')[0],di=dueInfo(o,o.terminadaEn||o.updated),m=mach(o.machine);
+function reminderMsg(o){const first=(o.name||'').split(' ')[0],di=dueInfo(o,doneAt(o)),m=mach(o.machine);
   return`Hola ${first}, somos AgroRuta Móvil. Ya se acerca ${di.iv?'el servicio de '+di.iv.toLocaleString('es-MX')+' h':'el siguiente servicio'} de tu ${m?m.n.toLowerCase():'máquina'}${o.model?' '+o.model:''} (el último fue el ${fmtDate(String(o.terminadaEn||o.date).slice(0,10))}). ¿Te lo agendamos? Podemos ir a tu parcela esta semana.`}
 function openPaste(){
   openSheet(`<div class="stack"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2>Pegar pedido</h2><button class="btn ghost sm" type="button" onclick="closeSheet()">Cerrar</button></div>
