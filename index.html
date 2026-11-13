@@ -212,12 +212,12 @@ select{-webkit-appearance:none;appearance:none;background-image:url("data:image/
 .chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .stars button{color:rgba(255,255,255,.16)}
 .stars button[aria-pressed="true"]{color:var(--accent);text-shadow:0 0 14px rgba(240,179,58,.35)}
-nav.tabs{left:max(12px,calc(50% - 268px));right:max(12px,calc(50% - 268px));bottom:calc(env(safe-area-inset-bottom,0px) + 10px);padding:5px;border-radius:32px;background:var(--glass);-webkit-backdrop-filter:blur(26px) saturate(180%);backdrop-filter:blur(26px) saturate(180%);border:1px solid var(--glass-b);box-shadow:var(--glass-sh),inset 0 1px 0 var(--glass-hi)}
+nav.tabs{left:max(12px,calc(50% - 268px));right:max(12px,calc(50% - 268px));bottom:max(10px,calc(env(safe-area-inset-bottom,0px) - 12px));padding:5px;border-radius:32px;background:var(--glass);-webkit-backdrop-filter:blur(26px) saturate(180%);backdrop-filter:blur(26px) saturate(180%);border:1px solid var(--glass-b);box-shadow:var(--glass-sh),inset 0 1px 0 var(--glass-hi)}
 nav.tabs .in{gap:2px}
 nav.tabs a{min-height:58px;padding:7px 2px 8px;border-radius:26px;color:var(--muted);transition:background .2s,color .2s}
 nav.tabs a[aria-current="page"]{background:rgba(255,255,255,.09);color:var(--fg);box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
 nav.tabs a[aria-current="page"] svg{color:var(--accent)}
-.app{padding-bottom:calc(112px + env(safe-area-inset-bottom,0px))}
+.app{padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))}
 .sheet{background:rgba(0,0,0,.45);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}
 .sheet .panel{position:relative;background:rgba(18,23,16,.9);-webkit-backdrop-filter:blur(30px) saturate(170%);backdrop-filter:blur(30px) saturate(170%);border-radius:30px 30px 0 0;border-top:1px solid var(--glass-b);box-shadow:0 -12px 40px rgba(0,0,0,.5);padding-top:22px}
 .sheet .panel::before{content:"";position:absolute;top:8px;left:50%;width:40px;height:5px;margin-left:-20px;border-radius:3px;background:rgba(255,255,255,.22)}
