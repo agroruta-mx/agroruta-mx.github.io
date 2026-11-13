@@ -3,14 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#2F6B3A">
+<meta name="theme-color" content="#0E130C">
+<meta name="color-scheme" content="dark">
 <meta name="description" content="Mantenimiento a domicilio para tractores, cosechadoras, camionetas y motobombas en Jalisco. Cotiza y pide tu servicio.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="AgroRuta">
-<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px/1.4 system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<style>:root{color-scheme:dark;background:#0B0F0A;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px/1.4 system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>AgroRuta Móvil</title>
 </head>
 <body>
@@ -20,21 +21,13 @@
 <style>
 /* Layout: app de una columna para celular, barra inferior de pestañas; en escritorio se centra a 560px */
 :root{
-  --bg:#F2F4EE; --surface:#FFFFFF; --surface-2:#E7EBE1; --fg:#1E2419; --muted:#5B6452;
-  --line:#D3D9CB; --accent:#E3A21A; --accent-ink:#1E1A0E; --green:#2F6B3A; --green-soft:#DCEBDC;
-  --head:#2F6B3A; --on-green:#FFFFFF; --on-danger:#FFFFFF; --warn:#B4531A; --warn-soft:#F7E2D3; --info:#285E8A; --info-soft:#DCE8F3; --danger:#A23030;
+  --bg:#0B0F0A; --surface:#161C14; --surface-2:#212A1E; --fg:#EEF2E8; --muted:#A3AD97;
+  --line:#2E3A2A; --accent:#F0B33A; --accent-ink:#1E1A0E; --green:#7FC48A; --green-soft:#1E331E;
+  --head:#0E130C; --on-green:#0F1F0E; --on-danger:#2A0E0E; --warn:#F0A06A; --warn-soft:#3A2618; --info:#8EC0EA; --info-soft:#1B2C3B; --danger:#F08A8A;
   --f-display:"Archivo","Arial Narrow",system-ui,sans-serif;
   --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --r:14px;
+  --r:14px;color-scheme:dark;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#141812; --surface:#1D231A; --surface-2:#262E22; --fg:#EDF1E6; --muted:#A3AD97;
-  --line:#344030; --accent:#F0B33A; --accent-ink:#1E1A0E; --green:#7FC48A; --green-soft:#21361F;
-  --head:#234F2B; --on-green:#0F1F0E; --on-danger:#2A0E0E; --warn:#F0A06A; --warn-soft:#3A2618; --info:#8EC0EA; --info-soft:#1B2C3B; --danger:#F08A8A; color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#141812; --surface:#1D231A; --surface-2:#262E22; --fg:#EDF1E6; --muted:#A3AD97;
-  --line:#344030; --accent:#F0B33A; --accent-ink:#1E1A0E; --green:#7FC48A; --green-soft:#21361F;
-  --head:#234F2B; --on-green:#0F1F0E; --on-danger:#2A0E0E; --warn:#F0A06A; --warn-soft:#3A2618; --info:#8EC0EA; --info-soft:#1B2C3B; --danger:#F08A8A; color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{height:100%}
@@ -172,17 +165,84 @@ nav.tabs a[aria-current="page"] svg{color:var(--accent)}
 .done{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;padding:24px 16px}
 .done .folio{font:800 34px/1 var(--f-display);letter-spacing:.03em;color:var(--green)}
 @media (prefers-reduced-motion:no-preference){.sheet .panel{animation:up .22s ease-out}@keyframes up{from{transform:translateY(30px);opacity:.6}}}
+/* ===== Diseño iOS (vidrio, siempre negro) ===== */
+:root{--glass:rgba(24,30,22,.84);--glass-b:rgba(255,255,255,.12);--glass-hi:rgba(255,255,255,.07);--glass-sh:0 10px 34px rgba(0,0,0,.55);--r:22px}
+html{background:var(--bg)}
+.app::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(110% 55% at 0% 0%,rgba(127,196,138,.16) 0%,transparent 62%),radial-gradient(90% 45% at 100% 28%,rgba(240,179,58,.10) 0%,transparent 60%),radial-gradient(80% 40% at 50% 100%,rgba(127,196,138,.07) 0%,transparent 70%)}
+body::before{background:rgba(14,19,12,.82);-webkit-backdrop-filter:blur(22px) saturate(170%);backdrop-filter:blur(22px) saturate(170%)}
+header.top{background:rgba(14,19,12,.82);-webkit-backdrop-filter:blur(22px) saturate(170%);backdrop-filter:blur(22px) saturate(170%);border-bottom:1px solid var(--glass-b);color:var(--fg)}
+.brand{color:var(--fg)}
+.brand i{border-radius:10px;box-shadow:0 2px 10px rgba(240,179,58,.35)}
+.hbtns{display:flex;align-items:center;gap:8px}
+.abtn{border:1px solid var(--glass-b);background:rgba(255,255,255,.08);color:var(--fg);border-radius:999px;width:44px;height:44px;min-width:44px;min-height:44px;padding:0;display:grid;place-items:center;box-shadow:inset 0 1px 0 var(--glass-hi);transition:background .2s,color .2s}
+.abtn .aa{font:800 19px/1 var(--f-display);letter-spacing:-.02em;display:flex;align-items:baseline}
+.abtn .aa small{font-size:12px;margin-right:1px}
+.abtn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);box-shadow:0 4px 16px rgba(240,179,58,.4)}
+.net{appearance:none;border:1px solid var(--glass-b);background:rgba(255,255,255,.06);border-radius:999px;width:44px;height:44px;display:grid;place-items:center;cursor:pointer;padding:0}
+.net b{width:11px;height:11px;border-radius:50%;background:#6FE08A;box-shadow:0 0 0 4px rgba(111,224,138,.16),0 0 10px rgba(111,224,138,.6)}
+.net.off b{background:#F0A040;box-shadow:0 0 0 4px rgba(240,160,64,.18),0 0 10px rgba(240,160,64,.6)}
+.netbar{display:flex;gap:10px;align-items:flex-start;padding:12px 16px;border-radius:18px;background:rgba(240,160,64,.12);border:1px solid rgba(240,160,64,.35);color:var(--fg);font-size:15px;line-height:1.35}
+.netbar i{font-style:normal;flex:none;width:24px;height:24px;border-radius:50%;background:#F0A040;color:#1E1A0E;display:grid;place-items:center;font:800 14px/1 var(--f-body);margin-top:1px}
+.card,.hero,.tile,.svc,.kpi{border-radius:var(--r);border-color:rgba(255,255,255,.07);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 6px 20px rgba(0,0,0,.28)}
+.hero{background:linear-gradient(160deg,#1C2619 0%,#141B12 100%)}
+.order{border-left-width:6px;border-radius:18px;border-top-color:rgba(255,255,255,.07);border-right-color:rgba(255,255,255,.07);border-bottom-color:rgba(255,255,255,.07);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 6px 20px rgba(0,0,0,.28)}
+.svc{border-radius:18px;border-width:1.5px}
+.tile{border-width:1.5px}
+.tile[aria-pressed="true"],.svc:has(input:checked){box-shadow:0 0 0 1px var(--accent) inset,0 6px 22px rgba(240,179,58,.12)}
+.svc:has(input:checked){box-shadow:0 0 0 1px var(--green) inset,0 6px 22px rgba(127,196,138,.10)}
+.btn{border-radius:999px}
+.btn.sm{border-radius:999px}
+.btn.primary{background:linear-gradient(180deg,#F5C057 0%,#E9A62A 100%);box-shadow:0 8px 22px rgba(240,179,58,.28),inset 0 1px 0 rgba(255,255,255,.45)}
+.btn.green{background:linear-gradient(180deg,#8ED29A 0%,#72B97E 100%);box-shadow:0 8px 22px rgba(127,196,138,.22),inset 0 1px 0 rgba(255,255,255,.35)}
+.btn.ghost{background:rgba(255,255,255,.07);border:1px solid var(--glass-b);box-shadow:inset 0 1px 0 var(--glass-hi);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.bigact{border-radius:26px;min-height:78px}
+.days button,.seg button{border-radius:16px;border-width:1.5px;background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12)}
+.days button[aria-pressed="true"],.seg button[aria-pressed="true"]{border-color:var(--accent);background:rgba(240,179,58,.16);box-shadow:0 0 0 1px var(--accent) inset}
+input[type=text],input[type=tel],input[type=date],input[type=number],select,textarea{border-radius:16px;border-width:1.5px;background:#11170F;border-color:rgba(255,255,255,.12);color:var(--fg)}
+input::placeholder,textarea::placeholder{color:#7F8A75}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px rgba(240,179,58,.22)}
+select{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23A3AD97' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:38px}
+.total{background:linear-gradient(160deg,#20291D 0%,#171E15 100%);color:var(--fg);border:1px solid rgba(240,179,58,.28);border-radius:var(--r);box-shadow:0 10px 28px rgba(0,0,0,.35)}
+.total .big{border-top-color:rgba(255,255,255,.12)}
+.total .big b{color:var(--accent)}
+.progress i{background:rgba(255,255,255,.1)}
+.note{background:rgba(142,192,234,.12);border:1px solid rgba(142,192,234,.22);border-radius:16px}
+.empty{border-color:rgba(255,255,255,.14);border-radius:var(--r)}
+.chip{border-radius:999px;background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.14);border-width:1.5px}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.stars button{color:rgba(255,255,255,.16)}
+.stars button[aria-pressed="true"]{color:var(--accent);text-shadow:0 0 14px rgba(240,179,58,.35)}
+nav.tabs{left:max(12px,calc(50% - 268px));right:max(12px,calc(50% - 268px));bottom:calc(env(safe-area-inset-bottom,0px) + 10px);padding:5px;border-radius:32px;background:var(--glass);-webkit-backdrop-filter:blur(26px) saturate(180%);backdrop-filter:blur(26px) saturate(180%);border:1px solid var(--glass-b);box-shadow:var(--glass-sh),inset 0 1px 0 var(--glass-hi)}
+nav.tabs .in{gap:2px}
+nav.tabs a{min-height:58px;padding:7px 2px 8px;border-radius:26px;color:var(--muted);transition:background .2s,color .2s}
+nav.tabs a[aria-current="page"]{background:rgba(255,255,255,.09);color:var(--fg);box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+nav.tabs a[aria-current="page"] svg{color:var(--accent)}
+.app{padding-bottom:calc(112px + env(safe-area-inset-bottom,0px))}
+.sheet{background:rgba(0,0,0,.45);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}
+.sheet .panel{position:relative;background:rgba(18,23,16,.9);-webkit-backdrop-filter:blur(30px) saturate(170%);backdrop-filter:blur(30px) saturate(170%);border-radius:30px 30px 0 0;border-top:1px solid var(--glass-b);box-shadow:0 -12px 40px rgba(0,0,0,.5);padding-top:22px}
+.sheet .panel::before{content:"";position:absolute;top:8px;left:50%;width:40px;height:5px;margin-left:-20px;border-radius:3px;background:rgba(255,255,255,.22)}
+.toast{top:calc(env(safe-area-inset-top,0px) + 76px);bottom:auto;display:flex;align-items:center;gap:10px;padding:10px 18px 10px 10px;border-radius:26px;background:rgba(30,37,27,.96);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);border:1px solid var(--glass-b);box-shadow:0 12px 34px rgba(0,0,0,.5),inset 0 1px 0 var(--glass-hi);color:var(--fg);font-size:16px;line-height:1.3;width:max-content;max-width:calc(100% - 32px);cursor:pointer;opacity:0;transform:translate(-50%,-14px) scale(.96);transition:opacity .22s ease,transform .28s cubic-bezier(.2,.9,.3,1.2)}
+.toast.in{opacity:1;transform:translate(-50%,0) scale(1)}
+.toast .ti{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font:800 15px/1 var(--f-body);background:rgba(255,255,255,.12);color:var(--fg)}
+.toast.t-ok .ti{background:#6FE08A;color:#0E1F10}
+.toast.t-err .ti{background:#F0A040;color:#1E1A0E}
+.toast.t-err{border-color:rgba(240,160,64,.45)}
+.big .toast{top:calc(env(safe-area-inset-top,0px) + 70px)}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+@media (max-width:380px){.hbtns{gap:6px}.net{width:36px;height:36px}.abtn{width:40px;height:40px;min-width:40px;min-height:40px}.brand{font-size:20px;gap:5px}.brand i{width:26px;height:26px;font-size:14px}.big .brand span{display:none}}
+@media (max-width:340px){.brand{font-size:19px}}
 </style>
 
 <div class="app">
   <header class="top wrap">
     <div class="row">
       <div class="brand"><i>AR</i>AgroRuta<span data-cli>Móvil</span><span data-team class="tag">Equipo</span></div>
-      <div style="display:flex;align-items:center;gap:10px"><div class="sync" id="sync" data-team><b></b><span>Conectando…</span></div><button type="button" class="abtn" id="big" aria-pressed="false" aria-label="Letra más grande" title="Letra más grande">A+</button></div>
+      <div class="hbtns"><div class="sync" id="sync" data-team><b></b><span>Conectando…</span></div><button type="button" class="net" id="net" data-cli aria-label="Señal" title="Señal"><b></b></button><button type="button" class="abtn" id="big" aria-pressed="false" aria-label="Letra más grande" title="Letra más grande"><span class="aa" aria-hidden="true"><small>A</small>A</span></button></div>
     </div>
   </header>
 
   <main class="wrap">
+    <div class="netbar" id="netbar" role="status" hidden data-cli></div>
     <!-- INICIO -->
     <section id="v-inicio" class="stack" data-cli>
       <div class="hero">
@@ -311,7 +371,7 @@ nav.tabs a[aria-current="page"] svg{color:var(--accent)}
 </nav>
 
 <div id="sheet" class="sheet" hidden><div class="panel wrap" id="sheet-panel"></div></div>
-<div id="toast" class="toast" hidden></div>
+<div id="toast" class="toast" hidden onclick="toastFuera()"></div>
 
 <script>
 const ICON={
@@ -444,7 +504,13 @@ const mach=id=>MACHINES.find(m=>m.id===id);
 const svc=id=>SERVICES.find(s=>s.id===id);
 const stName=id=>(STATES.find(s=>s.id===id)||{}).n||id;
 
-function toast(t){const el=$('#toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,2400)}
+const TOAST_ERR=/^(no |tu celular no|sin señal|escribe|elige|los domingos|revisa|tu pedido todavía|dale permiso|ese |esa |la mañana|para hoy|regresa|solo lectura)|no se pudo|no se activaron/i;
+const TOAST_OK=/guardad|^listo|gracias|activad|encontrado|copiad|cancelad|borrad|quitad|actualizad|agregad|registrad|cambiad|ya hay señal|ya nos llegó|marcado/i;
+function toast(t,tipo){const el=$('#toast');if(!el)return;t=String(t);tipo=tipo||(TOAST_ERR.test(t)?'err':TOAST_OK.test(t)?'ok':'info');
+  el.className='toast t-'+tipo;el.innerHTML=`<span class="ti" aria-hidden="true">${tipo==='ok'?'✓':tipo==='err'?'!':'i'}</span><span class="tt"></span>`;el.querySelector('.tt').textContent=t;
+  el.setAttribute('role',tipo==='err'?'alert':'status');clearTimeout(toast.t);clearTimeout(toast.h);el.hidden=false;void el.offsetWidth;el.classList.add('in');
+  toast.t=setTimeout(toastFuera,tipo==='err'?4200:2600)}
+function toastFuera(){const el=$('#toast');if(!el||el.hidden)return;el.classList.remove('in');clearTimeout(toast.h);toast.h=setTimeout(()=>{if(!el.classList.contains('in'))el.hidden=true},260)}
 async function copyText(t){try{await navigator.clipboard.writeText(t);toast('Copiado. Pégalo en WhatsApp.')}catch(e){showCopyFallback(t)}}
 function showCopyFallback(t){openSheet(`<div class="stack"><h3>Copia este texto</h3><textarea id="cpy" rows="10" readonly>${esc(t)}</textarea><button class="btn ghost block" type="button" onclick="closeSheet()">Listo</button></div>`);const a=$('#cpy');a.focus();a.select()}
 
@@ -628,7 +694,7 @@ function renderPedir(){
     $('#wiz-title').textContent='¡Pedido registrado!';$('#wiz-sub').textContent='';$('#wiz-prog').hidden=true;$('#wiz-bar').hidden=true;
     const o=orders.find(x=>x.id===lastFolio)||lastOrder;
     body.innerHTML=`<div class="card done"><span class="muted">Tu folio es</span><div class="folio">${esc(lastFolio)}</div><p>Te llamamos o escribimos al <b>${esc(o?.phone||'')}</b> para confirmar el horario.</p></div>
-    <div class="note">${navigator.onLine===false?'<b>Estás sin señal.</b> Tu pedido se guardó en este celular y nos llega solo en cuanto vuelva la señal. Te escribimos para confirmar.':'<b>¡Listo, ya nos llegó!</b> No tienes que hacer nada más. En <b>Inicio → Mis pedidos</b> ves cuando lo confirmemos y cuando el técnico vaya en camino.'}</div>
+    <div class="note">${!netOK||navigator.onLine===false?'<b>Estás sin señal.</b> Tu pedido se guardó en este celular y nos llega solo en cuanto vuelva la señal. Te escribimos para confirmar.':'<b>¡Listo, ya nos llegó!</b> No tienes que hacer nada más. En <b>Inicio → Mis pedidos</b> ves cuando lo confirmemos y cuando el técnico vaya en camino.'}</div>
     ${!TEAM&&o?avisoBtnHTML(o):''}
     ${!TEAM&&o?'<button class="btn ghost block" type="button" id="w-cal">Agregar a mi calendario</button>':''}
     <a class="btn ghost block" href="${waLink(quoteText(o||draft,lastFolio))}" target="_blank" rel="noopener">¿Dudas? Escríbenos por WhatsApp</a>
@@ -727,19 +793,28 @@ function buildOrder(d,folio,origen){
     interval:d.interval||null,junto:!!d.junto&&SMALL.includes(d.machine),brand:brandKey(d),hp:sizeOf(d)?sizeOf(d).id:null,total:q.total,traslado:q.traslado,costo:q.costo,origen:origen||'app',estado:'pendiente',tecnico:'',done:[],techNotes:'',created:new Date().toISOString(),updated:new Date().toISOString()};
 }
 const NUBE={url:'https://edknbmbzipckgbshmuha.supabase.co',key:'sb_publishable_B8O7gCqsK_LJgCPVqEew8w_HxunwAQM',vapid:'BK5HPciZDBTkYm1x4yMFwFZy_VrAnm8HBxk3Tt5D0-vPmnnyvSfaDHEMrP4TtNkoYghBfSSE7EW7It6QZgu2K9E'};
-async function rpc(fn,body){const r=await fetch(NUBE.url+'/rest/v1/rpc/'+fn,{method:'POST',headers:{'Content-Type':'application/json',apikey:NUBE.key},body:JSON.stringify(body)});
+var netOK=navigator.onLine!==false,avisarLlegada=new Set();
+const porEnviar=()=>localOrders.filter(o=>o.nube===false&&(o.date||'')>=todayISO()).length;
+function pintarNet(){if(TEAM||!avisarLlegada)return;const n=$('#net'),bar=$('#netbar');if(!n||!bar)return;const p=porEnviar();
+  n.classList.toggle('off',!netOK);n.setAttribute('aria-label',netOK?'Con señal':'Sin señal');n.title=netOK?'Con señal':'Sin señal';
+  if(netOK){bar.hidden=true;return}
+  localOrders.filter(o=>o.nube===false).forEach(o=>avisarLlegada.add(o.id));
+  bar.innerHTML=`<i aria-hidden="true">!</i><span>${p?`<b>Sin señal · ${p} pedido${p===1?'':'s'} por enviar.</b> Se manda solo cuando vuelva la señal.`:'<b>Sin señal.</b> Puedes seguir cotizando; tu pedido se manda solo cuando vuelva.'}</span>`;bar.hidden=false}
+function setNet(on){if(TEAM)return;const antes=netOK;netOK=on;pintarNet();if(on&&!antes)toast('Ya hay señal','ok')}
+function netFetch(u,o){return fetch(u,o).then(r=>{setNet(true);return r},e=>{if(navigator.onLine===false||!(e&&e.name==='AbortError'))setNet(false);throw e})}
+async function rpc(fn,body){const r=await netFetch(NUBE.url+'/rest/v1/rpc/'+fn,{method:'POST',headers:{'Content-Type':'application/json',apikey:NUBE.key},body:JSON.stringify(body)});
   if(!r.ok){let m='';try{m=(await r.json()).message||''}catch(e){}const e=new Error(m||'sin conexión');e.srv=!!m;throw e}try{return await r.json()}catch(e){return null}}
 const errMsg=e=>e&&e.srv?e.message.charAt(0).toUpperCase()+e.message.slice(1)+'.':'Sin señal. Intenta otra vez o escríbenos por WhatsApp.';
-function enviarNube(o){try{const p=Object.assign({},o);['id','nube','estadoNube','llegada','recordado'].forEach(k=>delete p[k]);fetch(NUBE.url+'/rest/v1/rpc/crear_pedido',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json',apikey:NUBE.key},body:JSON.stringify({p})}).then(r=>{if(r.ok){const lo=localOrders.find(x=>x.id===o.folio);if(lo){lo.nube=true;saveLocal();suscribirFolio(lo)}}}).catch(()=>{})}catch(e){}}
+function enviarNube(o){try{const p=Object.assign({},o);['id','nube','estadoNube','llegada','recordado'].forEach(k=>delete p[k]);netFetch(NUBE.url+'/rest/v1/rpc/crear_pedido',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json',apikey:NUBE.key},body:JSON.stringify({p})}).then(r=>{if(r.ok){const lo=localOrders.find(x=>x.id===o.folio);if(lo){lo.nube=true;saveLocal();suscribirFolio(lo)}if(avisarLlegada.delete(o.folio))toast('Tu pedido ya nos llegó','ok');pintarNet()}}).catch(()=>{})}catch(e){}}
 let syncing=false,cliOpen=null;
 async function syncPedidos(){
   if(TEAM||syncing)return;const lim=isoD(addDays(new Date(),-45));const L=localOrders.filter(o=>o.estado!=='cancelada'&&(o.estado!=='terminada'||(o.date||'')>=lim));if(!L.length)return;syncing=true;
   L.filter(o=>o.nube===false&&(o.date||'')>=todayISO()).forEach(o=>enviarNube(Object.assign({},o,{folio:o.folio||o.id})));
-  try{const r=await fetch(NUBE.url+'/rest/v1/rpc/estado_pedidos',{method:'POST',headers:{'Content-Type':'application/json',apikey:NUBE.key},body:JSON.stringify({folios:L.map(o=>o.id).slice(0,30)})});
+  try{const r=await netFetch(NUBE.url+'/rest/v1/rpc/estado_pedidos',{method:'POST',headers:{'Content-Type':'application/json',apikey:NUBE.key},body:JSON.stringify({folios:L.map(o=>o.id).slice(0,30)})});
     if(!r.ok)return;const rows=await r.json();if(!Array.isArray(rows))return;const m=Object.fromEntries(rows.map(x=>[x.id,x]));let ch=false;
     L.forEach(o=>{const x=m[o.id];
       if(!x){if(o.nube){o.estado='cancelada';ch=true}return}
-      if(!o.nube){o.nube=true;ch=true}
+      if(!o.nube){o.nube=true;ch=true;if(avisarLlegada.delete(o.id))toast('Tu pedido ya nos llegó','ok')}
       if(x.estado==='cancelada'){o.estado='cancelada';ch=true;return}
       if(x.estado&&x.estado!==o.estadoNube){o.estadoNube=x.estado;ch=true}
       if((x.llegada||'')!==(o.llegada||'')){o.llegada=x.llegada||'';ch=true}
@@ -756,7 +831,7 @@ async function syncPedidos(){
 const estCli=o=>o.estadoNube||o.estado;
 const horaLleg=o=>{if(!o.llegada)return'';const d=new Date(o.llegada);return isNaN(d)?'':d.toLocaleTimeString('es-MX',{hour:'numeric',minute:'2-digit'})};
 async function preciosNube(){
-  try{const r=await fetch(NUBE.url+'/rest/v1/rpc/precios_publicos',{method:'POST',headers:{'Content-Type':'application/json',apikey:NUBE.key},body:'{}'});
+  try{const r=await netFetch(NUBE.url+'/rest/v1/rpc/precios_publicos',{method:'POST',headers:{'Content-Type':'application/json',apikey:NUBE.key},body:'{}'});
     if(!r.ok)return;const v=await r.json();if(!v||typeof v!=='object'||Array.isArray(v))return;
     const antes=localStorage.getItem('ar_ajustes');const txt=JSON.stringify(v);if(antes===txt)return;
     applyAjustes(v);try{localStorage.setItem('ar_ajustes',txt)}catch(e){}
@@ -786,10 +861,11 @@ async function createOrder(){
 let db=null,mode='local',canWrite=true,orders=[],localOrders=[];
 try{localOrders=JSON.parse(localStorage.getItem('ar_orders')||'[]')}catch(e){}
 orders=localOrders;
-function saveLocal(){try{localStorage.setItem('ar_orders',JSON.stringify(localOrders))}catch(e){}}
+function saveLocal(){try{localStorage.setItem('ar_orders',JSON.stringify(localOrders))}catch(e){}if(typeof pintarNet==='function')pintarNet()}
 function setSync(on,t){const s=$('#sync');s.className='sync'+(on?' on':'');s.querySelector('span').textContent=t}
 async function initData(){
-  if(!TEAM){mode='local';renderAll();syncPedidos();preciosNube();addEventListener('online',()=>setTimeout(syncPedidos,1500));document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){syncPedidos();preciosNube()}});return}
+  if(!TEAM){mode='local';renderAll();pintarNet();syncPedidos();preciosNube();addEventListener('online',()=>setTimeout(()=>{syncPedidos();preciosNube()},1500));addEventListener('offline',()=>setNet(false));setInterval(()=>{if(!netOK&&navigator.onLine!==false)preciosNube()},20000);
+    const nb=$('#net');if(nb)nb.onclick=()=>{const p=porEnviar();toast(netOK?(p?`Con señal · mandando ${p} pedido${p===1?'':'s'}…`:'Con señal · tus pedidos están al día'):`Sin señal${p?` · ${p} pedido${p===1?'':'s'} por enviar`:''}`,netOK?'ok':'err')};document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){syncPedidos();preciosNube()}});return}
   setSync(false,'Conectando…');
   let user=null;
   try{if(window.claude&&window.claude.use){[db,user]=await Promise.all([window.claude.use('db'),window.claude.use('user')])}}catch(e){db=null}
@@ -1259,7 +1335,7 @@ function buscarSheet(){openSheet(`<div class="stack">${hdrSheet('Buscar pedido')
 /* fotos */
 async function fotosSheet(o){openSheet(`<div class="stack">${hdrSheet(esc(o.id),true)}<h2>Fotos de tu servicio</h2><div id="fs-body" class="muted">Cargando fotos…</div></div>`);
   $('#sheet-panel [data-back]').onclick=()=>renderClientOrder(o);
-  try{const r=await fetch(NUBE.url+'/functions/v1/notificar',{method:'POST',headers:{'Content-Type':'application/json',apikey:NUBE.key},body:JSON.stringify({tipo:'fotos_cliente',folio:o.id,tel:o.phone})});
+  try{const r=await netFetch(NUBE.url+'/functions/v1/notificar',{method:'POST',headers:{'Content-Type':'application/json',apikey:NUBE.key},body:JSON.stringify({tipo:'fotos_cliente',folio:o.id,tel:o.phone})});
     const j=await r.json().catch(()=>({}));const L=(j.fotos||[]).filter(x=>x&&/^https:\/\//.test(x.url));const box=$('#fs-body');if(!box)return;
     const T={antes:'Antes',despues:'Después',horometro:'Horómetro'};
     box.className='';box.innerHTML=L.length?`<div class="fotos-g">${L.map(x=>`<a href="${esc(x.url)}" target="_blank" rel="noopener"><img src="${esc(x.url)}" alt="${esc(T[x.tipo]||'Foto')}" loading="lazy"><span>${esc(T[x.tipo]||'Foto')}</span></a>`).join('')}</div><p class="muted small" style="margin-top:8px">Toca una foto para verla grande.</p>`:'<p class="muted">Todavía no hay fotos de este servicio.</p>'}
@@ -1268,7 +1344,7 @@ function pedirOtraVez(o){
   const md=misDatos||{};
   draft=Object.assign(blankDraft(),{name:md.name||o.name||'',phone:md.phone||o.phone||'',machine:o.machine,hp:o.hp||'m',brand:o.brand||'jd',model:o.model||'',services:(o.services||[]).filter(id=>allowed(id,o.machine,o)),muni:o.muni||md.muni||'',place:o.place||md.place||'',gps:okGps(o.gps)?o.gps:(md.gps||''),week:o.week||''});
   if(!draft.services.some(x=>x!=='revision'))draft.services=[];
-  saveDraft();lastFolio=null;step=draft.services.length?2:1;closeSheet();if(location.hash==='#pedir')route();else location.hash='pedir';toast('Elige el día de tu servicio')}
+  saveDraft();lastFolio=null;step=draft.services.length?2:1;closeSheet();if(location.hash==='#pedir')route();else location.hash='pedir';toast('Elige el día de tu servicio','info')}
 function renderMaquinas(){
   renderMisDatos();
   const list=$('#mq-list');
