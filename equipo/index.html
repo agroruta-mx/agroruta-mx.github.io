@@ -129,6 +129,8 @@ textarea{min-height:90px;resize:vertical}
 .kpi span{font-size:13px;color:var(--muted)}
 .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
 .chip{flex:none;border:2px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:8px 14px;font:700 15px var(--f-body);cursor:pointer;min-height:42px}
+.chip .cnt{display:inline-block;min-width:22px;margin-left:6px;padding:1px 7px;border-radius:999px;background:var(--accent);color:#1d1d1d;font-size:13px;line-height:20px;text-align:center}
+.chip.vacio{opacity:.5}
 .chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .order{display:flex;flex-direction:column;gap:6px;background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;text-align:left;color:var(--fg);font:inherit;width:100%}
 .order .r1{display:flex;justify-content:space-between;gap:8px;align-items:center}
@@ -853,16 +855,28 @@ async function saveAjustes(v){
 }
 
 /* ---------- vista técnico ---------- */
-let tFilter='hoy',tSearch='';
+let tFilter='hoy',tSearch='',tAuto=true,tSkip=false;
 const FILTERS=[['hoy','Hoy'],['pendiente','Por confirmar'],['activas','En proceso'],['cobrar','Por cobrar'],['todas','Todas']];
+function enFiltro(o,f,t){
+  if(f==='hoy')return o.date===t&&o.estado!=='cancelada';
+  if(f==='pendiente')return o.estado==='pendiente';
+  if(f==='activas')return['confirmada','camino','servicio'].includes(o.estado);
+  if(f==='terminada')return o.estado==='terminada';
+  if(f==='cobrar')return o.estado==='terminada'&&!o.pagado;
+  return true}
+const cuentaF=f=>{const t=todayISO();return orders.filter(o=>enFiltro(o,f,t)).length};
+function autoFiltro(){const t=todayISO(),hay=fn=>orders.some(fn);
+  if(hay(o=>['camino','servicio'].includes(o.estado)))return'activas';
+  if(hay(o=>o.estado==='pendiente'))return'pendiente';
+  if(hay(o=>enFiltro(o,'hoy',t)))return'hoy';
+  if(hay(o=>o.estado==='confirmada'))return'activas';
+  if(hay(o=>enFiltro(o,'cobrar',t)))return'cobrar';
+  return'todas'}
+function setFiltro(f){tFilter=f;tAuto=false}
 function filtered(){
   const t=todayISO(),q=tSearch.trim().toLowerCase();
   return orders.filter(o=>{
-    if(tFilter==='hoy'&&!(o.date===t&&o.estado!=='cancelada'))return false;
-    if(tFilter==='pendiente'&&o.estado!=='pendiente')return false;
-    if(tFilter==='activas'&&!['confirmada','camino','servicio'].includes(o.estado))return false;
-    if(tFilter==='terminada'&&o.estado!=='terminada')return false;
-    if(tFilter==='cobrar'&&!(o.estado==='terminada'&&!o.pagado))return false;
+    if(!enFiltro(o,tFilter,t))return false;
     if(q&&!(`${o.id} ${o.name} ${o.muni} ${o.phone}`.toLowerCase().includes(q)))return false;
     return true;
   }).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.slot==='mañana'?-1:1));
@@ -929,10 +943,11 @@ function renderTecnico(){
   if(window.AR&&['apagado','ios-instalar'].includes(AR.notifEstado))$('#t-kpis').insertAdjacentHTML('beforeend',`<a class="kpi" href="#ajustes" style="grid-column:1/-1;text-decoration:none;border-color:var(--green);color:var(--fg)"><span style="color:var(--green);font-weight:700;font-size:15px">🔔 Activa las notificaciones en este aparato →</span></a>`);
   const nRec=recordatorios().length;
   if(nRec)$('#t-kpis').insertAdjacentHTML('beforeend',`<button type="button" class="kpi" id="t-rec" style="grid-column:1/-1;text-align:left;cursor:pointer;border-color:var(--info);font:inherit;color:var(--fg)"><span style="color:var(--info);font-weight:700;font-size:15px">Recordatorios por mandar: ${nRec} cliente${nRec===1?'':'s'} →</span></button>`);
-  const tr=$('#t-rec');if(tr)tr.onclick=()=>{tFilter='recordar';renderTecnico()};
-  const pc=$('#t-kpis [data-tf2]');if(pc)pc.onclick=()=>{tFilter='cobrar';renderTecnico()};
-  $('#t-filters').innerHTML=FILTERS.map(([id,n])=>`<button type="button" class="chip" data-tf="${id}" aria-pressed="${tFilter===id}">${n}</button>`).join('');
-  $('#t-filters').querySelectorAll('[data-tf]').forEach(b=>b.onclick=()=>{tFilter=b.dataset.tf;renderTecnico()});
+  const tr=$('#t-rec');if(tr)tr.onclick=()=>{setFiltro('recordar');renderTecnico()};
+  const pc=$('#t-kpis [data-tf2]');if(pc)pc.onclick=()=>{setFiltro('cobrar');renderTecnico()};
+  if(tAuto&&!tSearch&&orders.length){tFilter=autoFiltro();tAuto=false}
+  $('#t-filters').innerHTML=FILTERS.map(([id,n])=>{const c=id==='todas'?0:cuentaF(id);return`<button type="button" class="chip${id!=='todas'&&!c&&tFilter!==id?' vacio':''}" data-tf="${id}" aria-pressed="${tFilter===id}">${n}${c?`<span class="cnt">${c}</span>`:''}</button>`}).join('');
+  $('#t-filters').querySelectorAll('[data-tf]').forEach(b=>b.onclick=()=>{setFiltro(b.dataset.tf);renderTecnico()});
   if(tFilter==='recordar'){$('#t-list').innerHTML=recordarHTML();$('#t-list').querySelectorAll('[data-rec]').forEach(b=>b.onclick=async()=>{b.disabled=true;if(await patchOrder(b.dataset.rec,{recordado:new Date().toISOString()}))toast('Marcado como avisado');renderTecnico()});return}
   if(tFilter==='clientes'){$('#t-list').innerHTML=clientesHTML();$('#t-list').querySelectorAll('[data-cl]').forEach(b=>b.onclick=()=>{tSearch=b.dataset.cl;$('#t-search').value=tSearch;$('#t-clear').hidden=false;tFilter='todas';renderTecnico()});return}
   const list=filtered();
@@ -948,11 +963,20 @@ function renderTecnico(){
     <div>${esc(m?m.n:'')} · ${(o.services||[]).length} servicio${(o.services||[]).length===1?'':'s'}${o.urgent?' · <b style="color:var(--warn)">URGENTE</b>':''}${o.solicitud&&o.solicitud.fecha&&!['terminada','cancelada'].includes(o.estado)?' · <b style="color:var(--warn)">📅 PIDE CAMBIO</b>':''}${o.estado==='cancelada'&&o.canceladaPor==='cliente'?' · canceló el cliente':''}${o.calif&&o.calif.e?' · '+'★'.repeat(o.calif.e):''}</div>
     <div class="r2"><span>${esc(fmtDate(o.date))}, ${esc(o.slot)} · ${esc(o.muni)}</span><span style="font-variant-numeric:tabular-nums">${money(o.total||0)}</span></div></button>
     ${nx?`<button type="button" class="btn qa" data-qa="${esc(o.id)}">${NEXT_LABEL[o.estado]} →</button>`:''}</div>`}).join('')
-    :`<div class="empty">${orders.length?'No hay órdenes en este filtro.':'Aún no hay órdenes. Cuando alguien pida un servicio aparecerá aquí.'}<br><br><a class="btn green sm" href="#pedir">Registrar la primera orden</a></div>`);
+    :vacioHTML());
+  $('#t-list').querySelectorAll('[data-ir]').forEach(b=>b.onclick=()=>{setFiltro(b.dataset.ir);renderTecnico();scrollTo(0,0)});
+  const tq=$('#t-list [data-limpiar]');if(tq)tq.onclick=()=>$('#t-clear').click();
   $('#t-list').querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>openOrder(b.dataset.o));
   const ag=$('#t-agenda');if(ag)ag.onclick=()=>copyText(`*Agenda AgroRuta – ${fmtDate(todayISO())}*\n`+ruta.map((o,i)=>`${i+1}. ${o.slot==='mañana'?'Mañana':'Tarde'} · ${o.name} (${o.phone})\n   ${(mach(o.machine)||{}).n||''}${o.model?' '+o.model:''} · ${(o.services||[]).filter(x=>x!=='revision').map(x=>(svc(x)||{n:x}).n).join(', ')}\n   ${o.muni}${o.place?' · '+o.place:''} · ${money(o.total||0)}`).join('\n')+`\n\nTotal del día: ${money(ruta.reduce((a,o)=>a+(o.total||0),0))}`);
   $('#t-list').querySelectorAll('[data-qa]').forEach(b=>b.onclick=async()=>{const o=orders.find(x=>x.id===b.dataset.qa);if(!o)return;const nx=NEXT[o.estado];if(nx==='camino'){salirARuta(o);return}b.disabled=true;const pt={estado:nx},prev={estado:o.estado};if(nx==='terminada'){pt.terminadaEn=new Date().toISOString();prev.terminadaEn=null}if(await patchOrder(o.id,pt)){toastUndo(o.name+': '+stName(nx),o.id,prev);if(nx==='confirmada'||nx==='terminada')asegurarFicha(Object.assign({},o,pt));if(nx==='terminada')openOrder(o.id)}else b.disabled=false});
 }
+function vacioHTML(){
+  if(!orders.length)return`<div class="empty">Aún no hay órdenes. Cuando alguien pida un servicio aparecerá aquí.<br><br><a class="btn green sm" href="#pedir">Registrar la primera orden</a></div>`;
+  if(tSearch.trim())return`<div class="empty">No encontramos “${esc(tSearch.trim())}”${tFilter!=='todas'?' en '+esc((FILTERS.find(x=>x[0]===tFilter)||[])[1]||''):''}.<br><br><button class="btn ghost sm" type="button" data-limpiar>Quitar búsqueda</button>${tFilter!=='todas'?' <button class="btn ghost sm" type="button" data-ir="todas">Buscar en todas</button>':''}</div>`;
+  const N={hoy:'Hoy no hay servicios',pendiente:'No hay pedidos por confirmar',activas:'No hay órdenes en proceso',cobrar:'No hay nada por cobrar',terminada:'No hay terminadas'};
+  const T={hoy:c=>`${c} para hoy`,pendiente:c=>`${c} por confirmar`,activas:c=>`${c} en proceso`,cobrar:c=>`${c} por cobrar`};
+  const otros=['activas','pendiente','hoy','cobrar'].filter(f=>f!==tFilter).map(f=>[f,cuentaF(f)]).filter(x=>x[1]);
+  return`<div class="empty">${N[tFilter]||'No hay órdenes en este filtro'}.${otros.length?`<br><br><div class="stack" style="gap:8px">${otros.map(([f,c])=>`<button class="btn primary sm" type="button" data-ir="${f}">Tienes ${T[f](c)} →</button>`).join('')}</div>`:'<br><br><span class="small">Todo al día 👌</span>'}</div>`}
 $('#t-search').oninput=e=>{tSearch=e.target.value;$('#t-clear').hidden=!tSearch;renderTecnico()};
 $('#t-clear').onclick=()=>{tSearch='';$('#t-search').value='';$('#t-clear').hidden=true;renderTecnico()};
 
@@ -1079,7 +1103,7 @@ function readPaste(){
    <dt>Dónde</dt><dd>${esc(d.muni)}${d.place?' · '+esc(d.place):''}</dd><dt>Total</dt><dd><b>${money(q.total)}</b></dd></dl></div>
    ${vio!==null&&vio!==q.total?`<div class="note">El cliente vio <b>${money(vio)}</b> en su cotización; con los precios de hoy sale en <b>${money(q.total)}</b>. Platíquenlo con él al confirmar.</div>`:''}
    <button class="btn green block" type="button" id="pp-save">Registrar orden</button>`;
-  $('#pp-save').onclick=async()=>{const b=$('#pp-save');b.disabled=true;await saveOrder(buildOrder(d,folio,'whatsapp'));toast('Orden '+folio+' registrada');closeSheet();tFilter='pendiente';if(view!=='tecnico')location.hash='tecnico';else renderTecnico()};
+  $('#pp-save').onclick=async()=>{const b=$('#pp-save');b.disabled=true;await saveOrder(buildOrder(d,folio,'whatsapp'));toast('Orden '+folio+' registrada');closeSheet();setFiltro('pendiente');if(view!=='tecnico')tSkip=true;if(view!=='tecnico')location.hash='tecnico';else renderTecnico()};
 }
 function renderOrderSoon(){setTimeout(()=>{if(!$('#sheet').hidden)renderOrder()},60)}
 function openSheet(html){$('#sheet-panel').innerHTML=html;$('#sheet').hidden=false;document.body.style.overflow='hidden'}
@@ -1420,7 +1444,7 @@ async function renderCuenta(){
    <div class="stack" style="gap:8px"><b>Notificaciones</b><p class="small">${NOTIF_TXT[st]||NOTIF_TXT.no}</p>
     ${st==='apagado'?`<button class="btn green block" type="button" id="cu-on">Activar notificaciones</button>`:''}
     ${st==='activo'?`<div class="flow"><button class="btn ghost sm" type="button" id="cu-test">Mandar prueba</button><button class="btn ghost sm" type="button" id="cu-off">Apagar aquí</button></div>`:''}</div>
-   <div class="stack" style="gap:8px;border-top:1px solid var(--line);padding-top:12px"><span class="small">Sesión: <b>${esc(AR.email())}</b></span><span class="muted small">Versión 1111-2000</span><button class="btn ghost sm" type="button" id="cu-out">Cerrar sesión</button></div>`;
+   <div class="stack" style="gap:8px;border-top:1px solid var(--line);padding-top:12px"><span class="small">Sesión: <b>${esc(AR.email())}</b></span><span class="muted small">Versión 1113-0100</span><button class="btn ghost sm" type="button" id="cu-out">Cerrar sesión</button></div>`;
   const on=$('#cu-on');if(on)on.onclick=async()=>{on.disabled=true;on.textContent='Activando… (si sale un aviso, dale Permitir)';let msg='';
     try{await AR.push.activar();toast('Notificaciones activadas');AR.push.prueba().catch(()=>{})}
     catch(e){const m=e&&e.message||'';msg=m==='permiso'?'No se dio permiso. En la Mac: Ajustes del Sistema → Notificaciones → AgroRuta Equipo → Permitir. En iPhone: Ajustes → Notificaciones → AR Equipo.':m==='permiso-tiempo'?'No contestaste el aviso de permiso. Búscalo arriba a la derecha de la pantalla o revisa Ajustes del Sistema → Notificaciones.':m==='suscribir'?'El navegador no respondió al registrar el aparato. Cierra la app, ábrela otra vez e intenta de nuevo.':m==='guardar'?'No se pudo guardar en la nube. Revisa tu señal e intenta otra vez.':'No se pudieron activar: '+m}
@@ -1700,8 +1724,10 @@ function respaldoExcel(){
 
 /* ---------- navegación ---------- */
 let view='inicio';
+let tOculto=0;document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')tOculto=Date.now();else if(tOculto&&Date.now()-tOculto>10*60e3&&view==='tecnico'&&!tSearch){tOculto=0;tAuto=true;renderTecnico()}});
 function route(){
-  const v=(location.hash||'#').slice(1),L=TEAM?['tecnico','agenda','pedir','dinero','clientes','ajustes','cotizar']:['inicio','pedir','cotizar','maquinas'];view=L.includes(v)?v:L[0];
+  const prevV=view,v=(location.hash||'#').slice(1),L=TEAM?['tecnico','agenda','pedir','dinero','clientes','ajustes','cotizar']:['inicio','pedir','cotizar','maquinas'];view=L.includes(v)?v:L[0];
+  if(view==='tecnico'&&prevV!=='tecnico'){if(tSkip)tSkip=false;else tAuto=true}
   document.querySelectorAll('main>section').forEach(s=>s.hidden=s.id!=='v-'+view);
   document.querySelectorAll('nav.tabs a').forEach(a=>{if(a.dataset.v===(view==='cotizar'&&TEAM?'pedir':view))a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
   renderView();scrollTo(0,0);
