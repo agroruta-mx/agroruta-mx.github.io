@@ -107,6 +107,7 @@ input[type=date]{-webkit-appearance:none;appearance:none;display:block;min-width
 input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0}
 input[type=date]::-webkit-calendar-picker-indicator{margin-left:auto}
 textarea{min-height:90px;resize:vertical}
+.kv a,p.small a{color:var(--green);font-weight:700}
 .seg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .seg button{min-height:52px;border-radius:12px;border:2px solid var(--line);background:var(--surface);color:var(--fg);font:700 16px var(--f-body);cursor:pointer}
 .seg button[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--surface))}
@@ -522,7 +523,7 @@ async function copyText(t){try{await navigator.clipboard.writeText(t);toast('Cop
 function showCopyFallback(t){openSheet(`<div class="stack"><h3>Copia este texto</h3><textarea id="cpy" rows="10" readonly>${esc(t)}</textarea><button class="btn ghost block" type="button" onclick="closeSheet()">Listo</button></div>`);const a=$('#cpy');a.focus();a.select()}
 
 /* ---------- cotización ---------- */
-function blankDraft(){return{machine:'',services:[],muni:'',urgent:false,date:'',slot:'',name:'',phone:'',place:'',model:'',hours:'',notes:'',interval:null,brand:'jd',hp:'m',junto:false,week:'',clienteId:'',maquinaId:'',serie:''}}
+function blankDraft(){return{machine:'',services:[],muni:'',urgent:false,date:'',slot:'',name:'',phone:'',place:'',model:'',hours:'',notes:'',interval:null,brand:'jd',hp:'m',junto:false,week:'',gps:'',clienteId:'',maquinaId:'',serie:''}}
 let draft=blankDraft();
 try{localStorage.removeItem('eq_draft')}catch(e){} /* el equipo siempre empieza la Nueva orden en blanco */
 function saveDraft(){}
@@ -539,7 +540,9 @@ function quote(d){
   const costo=Math.round(d.services.filter(svc).reduce((a,id)=>a+costOf(id,d),0)+(traslado&&zone?zone.km*COSTO_KM:0));
   return{lines,servicios,traslado,zone,urg,junto,total:sub,costo,gan:sub-costo};
 }
-const CODE_K=['folio','machine','hp','brand','interval','hours','services','muni','urgent','junto','date','slot','name','phone','place','model','notes','week'];
+const CODE_K=['folio','machine','hp','brand','interval','hours','services','muni','urgent','junto','date','slot','name','phone','place','model','notes','week','gps'];
+const okGps=g=>/^-?\d{1,2}\.\d{3,6},-?\d{1,3}\.\d{3,6}$/.test(String(g||''));
+const lugarQ=o=>okGps(o.gps)?o.gps:((o.place||'')+' '+(o.muni||'')+', Jalisco').trim();
 const APP_URL='https://agroruta-mx.github.io/';
 const b64e=a=>btoa(unescape(encodeURIComponent(JSON.stringify(a)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 const b64d=t=>{let b=t.replace(/-/g,'+').replace(/_/g,'/');while(b.length%4)b+='=';return JSON.parse(decodeURIComponent(escape(atob(b))))};
@@ -626,7 +629,7 @@ function bindPick(root,after){
   const hg=root.querySelector('#h-go');if(hg)hg.onclick=()=>{const h=root.querySelector('#h-in').value;if(!h){toast('Escribe las horas del horómetro');return}draft.hours=h;applyInterval(intervalFor(h));toast('Te toca el servicio de '+draft.interval.toLocaleString('es-MX')+' h');after()};
   root.querySelectorAll('[data-f]').forEach(i=>{
     const ev=(i.type==='checkbox'||i.tagName==='SELECT')?'change':'input';
-    i.addEventListener(ev,()=>{draft[i.dataset.f]=i.type==='checkbox'?i.checked:i.value;saveDraft();if(['muni','urgent','junto'].includes(i.dataset.f))after(true);else if(i.dataset.f==='model'&&$('#w-sum'))$('#w-sum').innerHTML=summaryHTML()});
+    i.addEventListener(ev,()=>{draft[i.dataset.f]=i.type==='checkbox'?i.checked:i.value;if(i.dataset.f==='urgent'){if(draft.urgent)draft.date=todayISO();saveDraft();after();return}saveDraft();if(['muni','junto'].includes(i.dataset.f))after(true);else if(i.dataset.f==='model'&&$('#w-sum'))$('#w-sum').innerHTML=summaryHTML()});
   });
 }
 
@@ -694,11 +697,12 @@ function renderPedir(){
   const rerender=(soft)=>{if(soft&&step===1){$('#w-total').innerHTML=totalHTML()}else if(step===0){const y=scrollY;renderPedir();if(SIZES[draft.machine]&&soft!=='hp'){const c=$('#hp-card');if(c)c.scrollIntoView({behavior:'smooth',block:'start'});else scrollTo(0,y)}else setTimeout(()=>{if(draft.machine&&step===0&&view==='pedir'){step=1;renderPedir();scrollTo(0,0)}},180)}else if(!soft){const y=scrollY;renderPedir();scrollTo(0,y)}else if(step===2||step===3){const t=$('#w-total');if(t)t.innerHTML=totalHTML()}};
   if(step===0)body.innerHTML=(TEAM?buscarClienteHTML():'')+machinesHTML();
   if(step===1)body.innerHTML=servicesHTML()+`<div id="w-total">${totalHTML()}</div>`;
-  if(step===2)body.innerHTML=`${placeHTML()}
+  if(step===2){if(draft.urgent)draft.date=todayISO();body.innerHTML=`${placeHTML()}
     <label class="f">Referencia del lugar <span class="h">Rancho, ejido, carretera, km o liga de Google Maps</span><input type="text" data-f="place" id="w-place" value="${esc(draft.place)}"></label>
-    <label class="f">Día<input type="date" data-f="date" id="w-date" ${TEAM?'':`min="${todayISO()}"`} value="${esc(draft.date)}"></label>
+    ${okGps(draft.gps)?`<p class="small">📍 El cliente mandó su ubicación · <a href="https://maps.google.com/?q=${draft.gps}" target="_blank" rel="noopener">ver en mapa</a></p>`:''}
+    ${draft.urgent?`<div class="note"><b>Hoy, ${esc(fmtDate(draft.date))}</b> · urgente (quita la palomita de urgente para elegir otro día)</div>`:`<label class="f">Día<input type="date" data-f="date" id="w-date" value="${esc(draft.date)}"></label>`}
     <div class="stack" style="gap:6px"><b>Horario</b><div class="seg" id="w-slot">${['mañana','tarde'].map(s=>`<button type="button" data-slot="${s}" aria-pressed="${draft.slot===s}">${s==='mañana'?'Mañana (8–13 h)':'Tarde (13–18 h)'}</button>`).join('')}</div></div>
-    <div id="w-total">${totalHTML()}</div>`;
+    <div id="w-total">${totalHTML()}</div>`}
   if(step===3)body.innerHTML=`<label class="f">Nombre<input type="text" data-f="name" id="w-name" autocomplete="name" value="${esc(draft.name)}"></label>
     <label class="f">Teléfono o WhatsApp<input type="tel" data-f="phone" id="w-phone" autocomplete="tel" inputmode="tel" value="${esc(draft.phone)}"></label>
     <label class="f">Marca y modelo ${draft.machine==='camioneta'?'de la camioneta':'de la máquina'} <span class="h">Opcional. Ej. ${esc(MODEL_EJ[draft.machine]||'John Deere 5075E')}</span><input type="text" data-f="model" id="w-model" value="${esc(draft.model)}"></label>
@@ -724,7 +728,7 @@ function validate(){
   if(step===0&&!draft.machine)return'Toca el tipo de máquina para seguir.';
   if(step===1&&!draft.services.some(x=>x!=='revision'))return'Elige al menos un servicio.';
   if(step===2){if(!draft.muni)return'Elige el municipio.';if(!draft.date)return'Elige el día del servicio.';if(!TEAM&&draft.date<todayISO())return'Ese día ya pasó. Elige de hoy en adelante.';if(!draft.slot)return'Elige si es en la mañana o en la tarde.'}
-  if(step===3){if(!TEAM&&draft.date&&draft.date<todayISO())return'El día que elegiste ya pasó. Regresa un paso y elige otro.';if(!draft.slot)return'Regresa un paso y elige mañana o tarde.';if(draft.name.trim().length<2)return'Escribe tu nombre.';if(draft.phone.replace(/\D/g,'').length<10)return'Escribe un teléfono de 10 dígitos.'}
+  if(step===3){if(draft.urgent&&draft.date!==todayISO())return'Lo urgente es para hoy. Regresa un paso.';if(!TEAM&&draft.date&&draft.date<todayISO())return'El día que elegiste ya pasó. Regresa un paso y elige otro.';if(!draft.slot)return'Regresa un paso y elige mañana o tarde.';if(draft.name.trim().length<2)return'Escribe tu nombre.';if(draft.phone.replace(/\D/g,'').length<10)return'Escribe un teléfono de 10 dígitos.'}
   return'';
 }
 $('#wiz-back').onclick=()=>{if(step>0){step--;renderPedir();scrollTo(0,0)}};
@@ -739,7 +743,7 @@ let lastOrder=null;
 function newFolio(){const d=new Date(),p=n=>String(n).padStart(2,'0');const r=Math.random().toString(36).slice(2,5).toUpperCase();return`AR-${p(d.getMonth()+1)}${p(d.getDate())}-${r}`}
 function buildOrder(d,folio,origen){
   const q=quote(d),t=v=>String(v||'').trim();
-  return{folio,machine:d.machine,model:t(d.model),services:[...d.services],muni:d.muni,place:t(d.place),urgent:!!d.urgent,
+  return{folio,machine:d.machine,model:t(d.model),services:[...d.services],muni:d.muni,place:t(d.place),urgent:!!d.urgent,gps:okGps(d.gps)?d.gps:'',
     date:d.date,slot:d.slot,name:t(d.name),phone:t(d.phone),hours:d.hours||'',week:Number(d.week)||0,notes:t(d.notes),
     interval:d.interval||null,junto:!!d.junto&&SMALL.includes(d.machine),brand:brandKey(d),hp:sizeOf(d)?sizeOf(d).id:null,total:q.total,traslado:q.traslado,costo:q.costo,clienteId:d.clienteId||'',maquinaId:d.maquinaId||'',serie:String(d.serie||'').trim(),origen:origen||'app',estado:'pendiente',tecnico:'',done:[],techNotes:'',created:new Date().toISOString(),updated:new Date().toISOString()};
 }
@@ -941,7 +945,7 @@ function renderTecnico(){
     const dh=showDays&&o.date!==lastDay?`<div class="dayh">${esc(dayLbl(o.date))}</div>`:'';lastDay=o.date;
     return dh+`<div class="oc"><button type="button" class="order st-${o.estado}${nx?' hasqa':''}" data-o="${esc(o.id)}">
     <div class="r1"><b>${esc(o.name)}</b><span class="pill st-${o.estado}">${o.estado==='terminada'?(o.pagado?'Pagado':'Por cobrar'):stName(o.estado)}</span></div>
-    <div>${esc(m?m.n:'')} · ${(o.services||[]).length} servicio${(o.services||[]).length===1?'':'s'}${o.urgent?' · <b style="color:var(--warn)">URGENTE</b>':''}</div>
+    <div>${esc(m?m.n:'')} · ${(o.services||[]).length} servicio${(o.services||[]).length===1?'':'s'}${o.urgent?' · <b style="color:var(--warn)">URGENTE</b>':''}${o.solicitud&&o.solicitud.fecha&&!['terminada','cancelada'].includes(o.estado)?' · <b style="color:var(--warn)">📅 PIDE CAMBIO</b>':''}${o.estado==='cancelada'&&o.canceladaPor==='cliente'?' · canceló el cliente':''}${o.calif&&o.calif.e?' · '+'★'.repeat(o.calif.e):''}</div>
     <div class="r2"><span>${esc(fmtDate(o.date))}, ${esc(o.slot)} · ${esc(o.muni)}</span><span style="font-variant-numeric:tabular-nums">${money(o.total||0)}</span></div></button>
     ${nx?`<button type="button" class="btn qa" data-qa="${esc(o.id)}">${NEXT_LABEL[o.estado]} →</button>`:''}</div>`}).join('')
     :`<div class="empty">${orders.length?'No hay órdenes en este filtro.':'Aún no hay órdenes. Cuando alguien pida un servicio aparecerá aquí.'}<br><br><a class="btn green sm" href="#pedir">Registrar la primera orden</a></div>`);
@@ -952,7 +956,7 @@ function renderTecnico(){
 $('#t-search').oninput=e=>{tSearch=e.target.value;$('#t-clear').hidden=!tSearch;renderTecnico()};
 $('#t-clear').onclick=()=>{tSearch='';$('#t-search').value='';$('#t-clear').hidden=true;renderTecnico()};
 
-const stopOf=o=>((o.place||'')+' '+o.muni+', Jalisco').trim();
+const stopOf=o=>lugarQ(o);
 let openId=null;
 function openOrder(id){if(!TEAM){const o=orders.find(x=>x.id===id);if(o)renderClientOrder(o);return}openId=id;renderOrder()}
 function renderOrder(preservar){
@@ -963,11 +967,16 @@ function renderOrder(preservar){
   const m=mach(o.machine),k=m?m.k:1,done=o.done||[];
   const items=(o.services||[]).flatMap(id=>{const s=svc(id);if(id==='afinacion'){const inc=(brandOf(o).inc||[]).filter(x=>allowed(x,o.machine,o)&&x!=='revision');return inc.map(x=>({id:'af_'+x,n:'Afinación: '+svc(x).n}))}return s&&s.pack?s.pack.map(p=>({id:p,n:svc(p).n})):[{id,n:s?s.n:id}]});
   const nx=NEXT[o.estado];
-  const maps='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent((o.place||'')+' '+o.muni+', Jalisco');
+  const maps='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(lugarQ(o));
   const K=cuentas(o),tsel=tecNorm(o.tecnico);
   openSheet(`<div class="stack">
    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="muted">${esc(o.id)}</span><button class="btn ghost sm" type="button" onclick="closeSheet()">Cerrar</button></div>
    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><h2>${esc(o.name)}</h2><span class="pill st-${o.estado}">${o.estado==='terminada'?(o.pagado?'Pagado':'Por cobrar'):stName(o.estado)}</span></div>
+   ${o.solicitud&&o.solicitud.fecha&&!['terminada','cancelada'].includes(o.estado)?`<div class="card stack" style="border:2px solid var(--warn);gap:10px" id="o-sol"><b>📅 El cliente pide cambiar la fecha</b>
+     <span>De ${esc(fmtDate(o.date))}, ${esc(o.slot||'')} → <b>${esc(fmtDate(o.solicitud.fecha))}, ${esc(o.solicitud.slot||'')}</b>${o.solicitud.motivo?'<br><span class="muted">“'+esc(o.solicitud.motivo)+'”</span>':''}</span>
+     <div class="flow"><button class="btn green sm" type="button" id="o-sol-ok">Aceptar cambio</button><a class="btn ghost sm" id="o-sol-no" href="${waLink(`Hola ${(o.name||'').split(' ')[0]}, sobre tu servicio ${o.id}: el ${fmtDate(o.solicitud.fecha)} por la ${o.solicitud.slot} no podemos. ¿Te queda otro día?`,o.phone)}" target="_blank" rel="noopener">No se puede (avisar)</a></div></div>`:''}
+   ${o.estado==='cancelada'&&o.canceladaPor==='cliente'?`<div class="note"><b>El cliente canceló desde su app</b>${o.motivoCancel?': “'+esc(o.motivoCancel)+'”':''}</div>`:''}
+   ${o.calif&&o.calif.e?`<div class="card stack" style="gap:4px"><b>Calificación del cliente</b><span style="font-size:24px;color:#E2A21B">${'★'.repeat(o.calif.e)}<span style="color:var(--line)">${'★'.repeat(5-o.calif.e)}</span></span>${o.calif.c?'<span>“'+esc(o.calif.c)+'”</span>':''}</div>`:''}
    ${nx&&o.estado!=='cancelada'?`<button class="btn primary block" type="button" id="o-next" style="min-height:62px;font-size:20px">${NEXT_LABEL[o.estado]} →</button>`:''}
    ${o.estado==='terminada'&&!o.pagado?`<div class="card stack" style="border:2px solid var(--warn)"><h3>Registrar pago</h3>
      <label class="f">Cobrado<input type="number" inputmode="numeric" id="o-cob" value="${o.total||0}"></label>
@@ -978,14 +987,14 @@ function renderOrder(preservar){
     <dt>Teléfono</dt><dd><b style="font-variant-numeric:tabular-nums">${esc(o.phone)}</b></dd>
     <dt>Máquina</dt><dd>${esc(m?m.n:'')}${sizeOf(o)?' '+esc(sizeOf(o).n.toLowerCase()):''}${o.model?' · '+esc(o.model):''}${o.serie?' · serie '+esc(o.serie):''}${o.hours?' · '+esc(Number(o.hours).toLocaleString('es-MX'))+(o.machine==='camioneta'?' km':' h'):''}</dd>
     <dt>Cuándo</dt><dd>${esc(fmtDate(o.date))}, ${esc(o.slot||'sin horario')}${o.urgent?' · <b style="color:var(--warn)">urgente</b>':''}</dd>
-    <dt>Dónde</dt><dd>${esc(o.muni)}${o.place?' · '+esc(o.place):''}</dd>
+    <dt>Dónde</dt><dd>${esc(o.muni)}${o.place?' · '+esc(o.place):''}${okGps(o.gps)?' · 📍 <b>ubicación exacta</b>':''}</dd>
     ${o.interval?`<dt>Servicio</dt><dd>${o.interval.toLocaleString('es-MX')} horas</dd>`:''}
     ${(o.extras||[]).map(x=>`<dt>Extra</dt><dd>${esc(x.n)}: ${money(x.p)}</dd>`).join('')}
     <dt>Total</dt><dd><b>${money(o.total||0)}</b>${o.pagado?` · <span class="pill st-terminada">Pagado ${money(o.cobrado??o.total)}${o.metodo?' · '+esc(o.metodo):''}</span>`:''}</dd>
     ${o.notes?`<dt>Cliente dice</dt><dd>${esc(o.notes)}</dd>`:''}
    </dl></div>
    <div class="flow"><a class="btn green sm" href="${waLink(clientMsg(o),o.phone)}" target="_blank" rel="noopener">WhatsApp</a><a class="btn ghost sm" href="tel:${esc(String(o.phone||'').replace(/\D/g,''))}">Llamar</a></div>
-   <a class="btn ghost sm block" href="${maps}" target="_blank" rel="noopener">Abrir en Maps</a>
+   <a class="btn ghost sm block" href="${maps}" target="_blank" rel="noopener">${okGps(o.gps)?'Abrir ubicación del cliente en Maps':'Abrir en Maps'}</a>
    ${cuentasHTML(o,K)}
    ${o.estado!=='cancelada'?`<div class="stack" style="gap:6px"><b>Técnico</b><div class="seg" style="grid-template-columns:repeat(3,minmax(0,1fr))" id="o-tecs">${TECNICOS.map(t=>`<button type="button" data-tec2="${t}" aria-pressed="${tsel===t}">${t}</button>`).join('')}</div>${o.tecnico&&!tsel?`<span class="muted small">Antes decía: ${esc(o.tecnico)}</span>`:''}</div>`:''}
    ${o.estado!=='cancelada'?`<h3>Lista de trabajo</h3>
@@ -1013,6 +1022,8 @@ function renderOrder(preservar){
    <button class="btn ghost block" type="button" id="o-del" style="color:var(--danger)">Borrar orden</button>
    </div></details>
   </div>`);
+  const so=$('#o-sol-ok');if(so)so.onclick=async()=>{so.disabled=true;const s2=o.solicitud;if(await patchOrder(o.id,{date:s2.fecha,slot:s2.slot,solicitud:null})){toast('Fecha cambiada. Al cliente le llega el aviso.')}renderOrderSoon()};
+  const sn=$('#o-sol-no');if(sn)sn.addEventListener('click',()=>{patchOrder(o.id,{solicitud:null}).then(renderOrderSoon)});
   const nb=$('#o-next');if(nb)nb.onclick=async()=>{if(nx==='camino'){salirARuta(o);return}nb.disabled=true;const pt={estado:nx},prev={estado:o.estado};if(nx==='terminada'){pt.terminadaEn=new Date().toISOString();prev.terminadaEn=null}if(await patchOrder(o.id,pt)){toastUndo(o.name+': '+stName(nx),o.id,prev);if(nx==='confirmada'||nx==='terminada')asegurarFicha(Object.assign({},o,pt))}renderOrderSoon()};
   let met='Efectivo';$('#sheet-panel').querySelectorAll('[data-met]').forEach(b=>b.onclick=()=>{met=b.dataset.met;$('#sheet-panel').querySelectorAll('[data-met]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
   const pay=$('#o-pay');if(pay)pay.onclick=async()=>{const v=Number($('#o-cob').value);if(!(v>=0)){toast('Escribe cuánto cobraron');return}pay.disabled=true;if(await patchOrder(o.id,{pagado:true,cobrado:v,metodo:met,pagadoEn:new Date().toISOString()}))toastUndo('Pago registrado: '+money(v),o.id,{pagado:false,cobrado:null,metodo:null,pagadoEn:null});renderOrderSoon()};
@@ -1242,7 +1253,8 @@ function finanzas(p){
   const salio=gs.reduce((a,g)=>a+(Number(g.monto)||0),0);
   const byT={};gs.forEach(g=>{byT[g.tipo]=(byT[g.tipo]||0)+(Number(g.monto)||0)});
   const byM={};done.forEach(o=>{const n=(mach(o.machine)||{}).n||'Otro';byM[n]=(byM[n]||0)+1});
-  return{R,done,gs,vendido,cobrado,porCobrar,ingresos,ref,cam,otros,general,salio,gan:ingresos-ref-cam-otros-general,
+  const cal=done.filter(o=>o.calif&&o.calif.e>0),calif=cal.length?cal.reduce((a,o)=>a+Number(o.calif.e),0)/cal.length:0;
+  return{calif,ncalif:cal.length,R,done,gs,vendido,cobrado,porCobrar,ingresos,ref,cam,otros,general,salio,gan:ingresos-ref-cam-otros-general,
     refCalc:C.some(x=>!x.refR&&x.ref>0),camCalc:C.some(x=>!x.camR&&x.cam>0),byT,byM};
 }
 
@@ -1261,7 +1273,8 @@ function renderDinero(){
      <dt>Camioneta</dt><dd>− ${money(F.cam)}${F.camCalc?' <span class="muted small">(con calculados)</span>':''}</dd>
      ${F.otros?`<dt>Otros de servicios</dt><dd>− ${money(F.otros)}</dd>`:''}
      <dt>Gastos generales</dt><dd>− ${money(F.general)}</dd>
-     <dt><b>Ganancia</b></dt><dd><b style="color:var(--green)">${money(F.gan)}</b></dd></dl>
+     <dt><b>Ganancia</b></dt><dd><b style="color:var(--green)">${money(F.gan)}</b></dd>
+     ${F.ncalif?`<dt>Calificación</dt><dd><b style="color:#E2A21B">★ ${F.calif.toFixed(1).replace('.0','')}</b> <span class="muted small">(${F.ncalif} cliente${F.ncalif===1?'':'s'})</span></dd>`:''}</dl>
      <p class="muted small">“Calculados” = lo que estima la app cuando no anotaron el gasto real de ese servicio. Es el mismo número que ven en el Panel y en la meta.</p>
      <button class="btn ghost sm" type="button" id="di-copy">Copiar resumen para el grupo</button></div>
     ${gOpen?'':`<button class="btn green block" type="button" id="g-open">+ Registrar gasto</button>`}
@@ -1407,7 +1420,7 @@ async function renderCuenta(){
    <div class="stack" style="gap:8px"><b>Notificaciones</b><p class="small">${NOTIF_TXT[st]||NOTIF_TXT.no}</p>
     ${st==='apagado'?`<button class="btn green block" type="button" id="cu-on">Activar notificaciones</button>`:''}
     ${st==='activo'?`<div class="flow"><button class="btn ghost sm" type="button" id="cu-test">Mandar prueba</button><button class="btn ghost sm" type="button" id="cu-off">Apagar aquí</button></div>`:''}</div>
-   <div class="stack" style="gap:8px;border-top:1px solid var(--line);padding-top:12px"><span class="small">Sesión: <b>${esc(AR.email())}</b></span><span class="muted small">Versión 1111-1411</span><button class="btn ghost sm" type="button" id="cu-out">Cerrar sesión</button></div>`;
+   <div class="stack" style="gap:8px;border-top:1px solid var(--line);padding-top:12px"><span class="small">Sesión: <b>${esc(AR.email())}</b></span><span class="muted small">Versión 1111-2000</span><button class="btn ghost sm" type="button" id="cu-out">Cerrar sesión</button></div>`;
   const on=$('#cu-on');if(on)on.onclick=async()=>{on.disabled=true;on.textContent='Activando… (si sale un aviso, dale Permitir)';let msg='';
     try{await AR.push.activar();toast('Notificaciones activadas');AR.push.prueba().catch(()=>{})}
     catch(e){const m=e&&e.message||'';msg=m==='permiso'?'No se dio permiso. En la Mac: Ajustes del Sistema → Notificaciones → AgroRuta Equipo → Permitir. En iPhone: Ajustes → Notificaciones → AR Equipo.':m==='permiso-tiempo'?'No contestaste el aviso de permiso. Búscalo arriba a la derecha de la pantalla o revisa Ajustes del Sistema → Notificaciones.':m==='suscribir'?'El navegador no respondió al registrar el aparato. Cierra la app, ábrela otra vez e intenta de nuevo.':m==='guardar'?'No se pudo guardar en la nube. Revisa tu señal e intenta otra vez.':'No se pudieron activar: '+m}

@@ -109,6 +109,20 @@ input[type=date]{-webkit-appearance:none;appearance:none;display:block;min-width
 input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0}
 input[type=date]::-webkit-calendar-picker-indicator{margin-left:auto}
 textarea{min-height:90px;resize:vertical}
+.days{display:flex;flex-wrap:wrap;gap:8px}
+.days button{flex:1 1 calc(33% - 8px);min-width:92px;min-height:52px;border-radius:12px;border:2px solid var(--line);background:var(--surface);color:var(--fg);font:700 15px/1.15 var(--f-body);cursor:pointer;padding:6px}
+.days button small{display:block;font-weight:500;font-size:13px;color:var(--muted)}
+.days button[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--surface))}
+.seg button:disabled{opacity:.4;cursor:not-allowed}
+.linkbtn{background:none;border:0;padding:0;color:var(--green);font:inherit;font-weight:700;text-decoration:underline;cursor:pointer}
+.stars{display:flex;gap:6px;justify-content:center}
+.stars button{background:none;border:0;font-size:40px;line-height:1;cursor:pointer;color:var(--line);padding:2px}
+.stars button[aria-pressed="true"]{color:#E2A21B}
+.fotos-g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.fotos-g a{display:block;position:relative;border-radius:12px;overflow:hidden;background:var(--surface-2);aspect-ratio:1}
+.fotos-g img{width:100%;height:100%;object-fit:cover;display:block}
+.fotos-g span{position:absolute;left:6px;bottom:6px;background:rgba(0,0,0,.65);color:#fff;font:700 12px var(--f-body);padding:4px 8px;border-radius:999px}
+.kv a,p.small a{color:var(--green);font-weight:700}
 .seg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .seg button{min-height:52px;border-radius:12px;border:2px solid var(--line);background:var(--surface);color:var(--fg);font:700 16px var(--f-body);cursor:pointer}
 .seg button[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--surface))}
@@ -435,12 +449,12 @@ async function copyText(t){try{await navigator.clipboard.writeText(t);toast('Cop
 function showCopyFallback(t){openSheet(`<div class="stack"><h3>Copia este texto</h3><textarea id="cpy" rows="10" readonly>${esc(t)}</textarea><button class="btn ghost block" type="button" onclick="closeSheet()">Listo</button></div>`);const a=$('#cpy');a.focus();a.select()}
 
 /* ---------- cotización ---------- */
-function blankDraft(){return{machine:'',services:[],muni:'',urgent:false,date:'',slot:'',name:'',phone:'',place:'',model:'',hours:'',notes:'',interval:null,brand:'jd',hp:'m',junto:false,week:''}}
+function blankDraft(){return{machine:'',services:[],muni:'',urgent:false,date:'',slot:'',name:'',phone:'',place:'',model:'',hours:'',notes:'',interval:null,brand:'jd',hp:'m',junto:false,week:'',gps:''}}
 let draft=blankDraft();
 let misDatos=null;try{misDatos=JSON.parse(localStorage.getItem('ar_misdatos')||'null')}catch(e){}
 try{const s=JSON.parse(localStorage.getItem('ar_draft')||'null');
   if(!misDatos&&s&&(String(s.name||'').trim()||String(s.phone||'').trim())){misDatos={name:s.name||'',phone:s.phone||'',muni:s.muni||'',place:s.place||''};localStorage.setItem('ar_misdatos',JSON.stringify(misDatos))}
-  if(s){draft=Object.assign(blankDraft(),s);if(draft.date&&draft.date<todayISO())draft.date=''}
+  if(s){draft=Object.assign(blankDraft(),s);if(draft.urgent&&draft.date!==todayISO()){draft.urgent=false;draft.date=''}if(draft.date&&draft.date<todayISO())draft.date=''}
   else if(misDatos)draft=Object.assign(blankDraft(),misDatos)}catch(e){}
 function saveDraft(){try{localStorage.setItem('ar_draft',JSON.stringify(draft))}catch(e){}}
 
@@ -456,7 +470,7 @@ function quote(d){
   const costo=Math.round(d.services.filter(svc).reduce((a,id)=>a+costOf(id,d),0)+(traslado&&zone?zone.km*COSTO_KM:0));
   return{lines,servicios,traslado,zone,urg,junto,total:sub,costo,gan:sub-costo};
 }
-const CODE_K=['folio','machine','hp','brand','interval','hours','services','muni','urgent','junto','date','slot','name','phone','place','model','notes','week'];
+const CODE_K=['folio','machine','hp','brand','interval','hours','services','muni','urgent','junto','date','slot','name','phone','place','model','notes','week','gps'];
 const APP_URL='https://agroruta-mx.github.io/';
 const b64e=a=>btoa(unescape(encodeURIComponent(JSON.stringify(a)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 const b64d=t=>{let b=t.replace(/-/g,'+').replace(/_/g,'/');while(b.length%4)b+='=';return JSON.parse(decodeURIComponent(escape(atob(b))))};
@@ -484,7 +498,7 @@ function quoteText(d,folio){
   if(q.junto)t+=`• Traslado: sin costo (va junto con otro servicio)\n`;else if(q.zone)t+=`• Traslado (${d.muni}, ${q.zone.n}): ${money(q.traslado)}\n`;
   if(q.urg)t+=`• Servicio urgente mismo día: ${money(q.urg)}\n`;
   t+=`*Total estimado: ${money(q.total)}*\n`;
-  if(folio){t+=`Fecha: ${fmtDate(d.date)}, ${d.slot}\nLugar: ${d.place||d.muni}\nCliente: ${d.name} · ${d.phone}\n${d.notes?'Notas: '+d.notes+'\n':''}`}
+  if(folio){t+=`Fecha: ${fmtDate(d.date)}, ${d.slot}\nLugar: ${d.place||d.muni}\n${okGps(d.gps)?'Ubicación: https://maps.google.com/?q='+d.gps+'\n':''}Cliente: ${d.name} · ${d.phone}\n${d.notes?'Notas: '+d.notes+'\n':''}`}
   t+='Refacciones especiales se cotizan aparte.';
   if(folio&&!TEAM)t+=`\n\nCódigo (no lo borres): AR1.${encodeOrder(d,folio)}`;
   return t;
@@ -511,8 +525,30 @@ function servicesHTML(){
 function placeHTML(withUrgent=true){
   return`<label class="f">Municipio<select data-f="muni"><option value="">Elige el municipio…</option>${MUNIS.map(([n])=>`<option ${draft.muni===n?'selected':''}>${esc(n)}</option>`).join('')}</select></label>
  ${SMALL.includes(draft.machine)?`<label class="toggle"><input type="checkbox" data-f="junto" ${draft.junto?'checked':''}>Va junto con otro servicio en el mismo lugar y día (sin traslado)</label><p class="muted small">¿Varias bombas en tu comunidad? Júntenlas el mismo día y el traslado se reparte. Pregúntanos por WhatsApp.</p>`:''}
-  ${withUrgent?`<label class="toggle"><input type="checkbox" data-f="urgent" ${draft.urgent?'checked':''}>Lo necesito hoy mismo (urgente, +25%)</label>`:''}`
+  ${withUrgent?(TEAM||urgPosible()?`<label class="toggle"><input type="checkbox" data-f="urgent" ${draft.urgent?'checked':''}>Lo necesito hoy mismo (urgente, +25%)</label>`:`<p class="muted small">El servicio urgente para el mismo día es de lunes a sábado, pidiéndolo antes de las 4 pm.</p>`):''}`
 }
+const nowH=()=>new Date().getHours();
+const okGps=g=>/^-?\d{1,2}\.\d{3,6},-?\d{1,3}\.\d{3,6}$/.test(String(g||''));
+const esDomingo=s=>{if(!s)return false;const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d).getDay()===0};
+const urgPosible=()=>new Date().getDay()!==0&&nowH()<16;
+const mananaPaso=d=>d===todayISO()&&nowH()>=13;
+function diasLab(n){const r=[];let d=new Date();if(nowH()>=17)d=addDays(d,1);while(r.length<n){if(d.getDay()!==0)r.push(isoD(d));d=addDays(d,1)}return r}
+function diaLbl(s){const t=todayISO(),m=isoD(addDays(new Date(),1)),[y,mo,d]=s.split('-').map(Number),x=new Date(y,mo-1,d);
+  const dia=x.toLocaleDateString('es-MX',{weekday:'short'}).replace('.',''),num=x.toLocaleDateString('es-MX',{day:'numeric',month:'short'}).replace('.','');
+  return`${s===t?'Hoy':s===m?'Mañana':dia[0].toUpperCase()+dia.slice(1)}<small>${num}</small>`}
+function diasHTML(sel,id,excluir){const L=diasLab(6).filter(d=>d!==excluir),otro=!!sel&&!L.includes(sel);
+  return`<div class="days" id="${id}">${L.map(d=>`<button type="button" data-day="${d}" aria-pressed="${sel===d}">${diaLbl(d)}</button>`).join('')}<button type="button" data-day="otro" aria-pressed="${otro}">Otro día<small>calendario</small></button></div>
+  <input type="date" id="${id}-otro" min="${todayISO()}" value="${otro?esc(sel):''}" ${otro?'':'hidden'} aria-label="Otro día">`}
+function bindDias(id,pick){const box=$('#'+id),inp=$('#'+id+'-otro');if(!box)return;
+  box.querySelectorAll('[data-day]').forEach(b=>b.onclick=()=>{box.querySelectorAll('[data-day]').forEach(x=>x.setAttribute('aria-pressed',x===b));
+    if(b.dataset.day==='otro'){inp.hidden=false;try{inp.showPicker()}catch(e){inp.focus()}pick(inp.value||'')}else{inp.hidden=true;pick(b.dataset.day)}});
+  inp.onchange=()=>{if(esDomingo(inp.value)){toast('Los domingos no trabajamos. Elige otro día.');inp.value=''}pick(inp.value)}}
+function slotHTML(sel,date,id){return`<div class="seg" id="${id}">${['mañana','tarde'].map(s=>`<button type="button" data-slot="${s}" aria-pressed="${sel===s}" ${s==='mañana'&&mananaPaso(date)?'disabled':''}>${s==='mañana'?'Mañana (8–13 h)':'Tarde (13–18 h)'}</button>`).join('')}</div>`}
+function gpsHTML(g){return okGps(g)?`<p class="small">📍 <b>Ubicación guardada</b> · <a href="https://maps.google.com/?q=${g}" target="_blank" rel="noopener">ver en mapa</a> · <button type="button" class="linkbtn" data-gps-x>quitar</button></p>`:`<button class="btn ghost block" type="button" data-gps-go>📍 Mandar mi ubicación (si estás en la parcela)</button>`}
+function bindGps(box,get,set){const paint=()=>{box.innerHTML=gpsHTML(get());bindGps(box,get,set)};
+  const g=box.querySelector('[data-gps-go]');if(g)g.onclick=()=>{if(!navigator.geolocation){toast('Tu celular no deja usar la ubicación');return}g.disabled=true;g.textContent='Buscando tu ubicación…';
+    navigator.geolocation.getCurrentPosition(p=>{set(p.coords.latitude.toFixed(5)+','+p.coords.longitude.toFixed(5));paint();toast('Ubicación guardada')},e=>{toast(e&&e.code===1?'Dale permiso de ubicación a AgroRuta en tu celular':'No se pudo sacar la ubicación. Intenta otra vez.');paint()},{enableHighAccuracy:true,timeout:20000,maximumAge:60000})};
+  const x=box.querySelector('[data-gps-x]');if(x)x.onclick=()=>{set('');paint()}}
 function totalHTML(){
   const q=quote(draft);
   if(!q.lines.length)return`<div class="empty">Elige al menos un servicio para ver el precio.</div>`;
@@ -543,7 +579,7 @@ function bindPick(root,after){
   const hg=root.querySelector('#h-go');if(hg)hg.onclick=()=>{const h=root.querySelector('#h-in').value;if(!h){toast('Escribe las horas del horómetro');return}draft.hours=h;applyInterval(intervalFor(h));toast('Te toca el servicio de '+draft.interval.toLocaleString('es-MX')+' h');after()};
   root.querySelectorAll('[data-f]').forEach(i=>{
     const ev=(i.type==='checkbox'||i.tagName==='SELECT')?'change':'input';
-    i.addEventListener(ev,()=>{draft[i.dataset.f]=i.type==='checkbox'?i.checked:i.value;saveDraft();if(['muni','urgent','junto'].includes(i.dataset.f))after(true);else if(i.dataset.f==='model'&&$('#w-sum'))$('#w-sum').innerHTML=summaryHTML()});
+    i.addEventListener(ev,()=>{draft[i.dataset.f]=i.type==='checkbox'?i.checked:i.value;if(i.dataset.f==='urgent'){if(draft.urgent){draft.date=todayISO();if(mananaPaso(draft.date)&&draft.slot==='mañana')draft.slot=''}saveDraft();after();return}saveDraft();if(['muni','junto'].includes(i.dataset.f))after(true);else if(i.dataset.f==='model'&&$('#w-sum'))$('#w-sum').innerHTML=summaryHTML()});
   });
 }
 
@@ -593,15 +629,18 @@ function renderPedir(){
     const o=orders.find(x=>x.id===lastFolio)||lastOrder;
     body.innerHTML=`<div class="card done"><span class="muted">Tu folio es</span><div class="folio">${esc(lastFolio)}</div><p>Te llamamos o escribimos al <b>${esc(o?.phone||'')}</b> para confirmar el horario.</p></div>
     <div class="note">${navigator.onLine===false?'<b>Estás sin señal.</b> Tu pedido se guardó en este celular y nos llega solo en cuanto vuelva la señal. Te escribimos para confirmar.':'<b>¡Listo, ya nos llegó!</b> No tienes que hacer nada más. En <b>Inicio → Mis pedidos</b> ves cuando lo confirmemos y cuando el técnico vaya en camino.'}</div>
+    ${!TEAM&&o?avisoBtnHTML(o):''}
+    ${!TEAM&&o?'<button class="btn ghost block" type="button" id="w-cal">Agregar a mi calendario</button>':''}
     <a class="btn ghost block" href="${waLink(quoteText(o||draft,lastFolio))}" target="_blank" rel="noopener">¿Dudas? Escríbenos por WhatsApp</a>
     <button class="btn ghost block" type="button" id="w-share">Copiar pedido</button>
     <p class="muted small" style="text-align:center">WhatsApp de AgroRuta: <b>${WA_SHOW}</b></p>
     ${!TEAM&&o&&hasHours(o.machine)&&o.hours&&!maquinas.some(m=>m.machine===o.machine&&m.model===o.model&&String(m.hours)===String(o.hours))?`<button class="btn ghost block" type="button" id="w-save-mq">Guardar esta máquina en Mis máquinas</button>`:''}
-    ${!TEAM&&pendDatos&&pendDatos.name&&!(misDatos&&misDatos.name===pendDatos.name&&misDatos.phone===pendDatos.phone&&misDatos.muni===pendDatos.muni&&misDatos.place===pendDatos.place)?`<div class="card stack" id="w-datos" style="gap:10px"><b>¿Guardar tus datos para la próxima?</b><p class="muted small">Tu nombre, teléfono y lugar se quedan solo en este celular, para no volver a escribirlos. Los puedes borrar cuando quieras en Máquinas → Mis datos.</p><div class="flow"><button class="btn ghost sm" type="button" id="wd-no">No, gracias</button><button class="btn green sm" type="button" id="wd-si">Sí, guardar</button></div></div>`:''}
+    ${!TEAM&&pendDatos&&pendDatos.name&&!(misDatos&&misDatos.name===pendDatos.name&&misDatos.phone===pendDatos.phone&&misDatos.muni===pendDatos.muni&&misDatos.place===pendDatos.place&&(misDatos.gps||'')===(pendDatos.gps||''))?`<div class="card stack" id="w-datos" style="gap:10px"><b>¿Guardar tus datos para la próxima?</b><p class="muted small">Tu nombre, teléfono y lugar se quedan solo en este celular, para no volver a escribirlos. Los puedes borrar cuando quieras en Máquinas → Mis datos.</p><div class="flow"><button class="btn ghost sm" type="button" id="wd-no">No, gracias</button><button class="btn green sm" type="button" id="wd-si">Sí, guardar</button></div></div>`:''}
     <button class="btn ghost block" type="button" id="w-new">Hacer otro pedido</button>`;
-    const wds=$('#wd-si');if(wds){wds.onclick=()=>{guardarMisDatos(pendDatos);pendDatos=null;draft=Object.assign(draft,{name:misDatos.name,phone:misDatos.phone,muni:misDatos.muni,place:misDatos.place});saveDraft();$('#w-datos').remove();toast('Datos guardados')};$('#wd-no').onclick=()=>{pendDatos=null;$('#w-datos').remove()}}
+    const wds=$('#wd-si');if(wds){wds.onclick=()=>{guardarMisDatos(pendDatos);pendDatos=null;draft=Object.assign(draft,{name:misDatos.name,phone:misDatos.phone,muni:misDatos.muni,place:misDatos.place,gps:misDatos.gps||''});saveDraft();$('#w-datos').remove();toast('Datos guardados')};$('#wd-no').onclick=()=>{pendDatos=null;$('#w-datos').remove()}}
     const sm=$('#w-save-mq');if(sm)sm.onclick=()=>{upsertMaquina({machine:o.machine,hp:o.hp,brand:o.brand,model:o.model||'',hours:Number(o.hours),week:o.week});sm.remove();toast('Guardada en Mis máquinas')};
     $('#w-share').onclick=()=>copyText(quoteText(o||draft,lastFolio));
+    const wc=$('#w-cal');if(wc)wc.onclick=()=>calSheet(o);bindAviso(o);
     $('#w-new').onclick=()=>{lastFolio=null;step=0;renderPedir()};
     return;
   }
@@ -613,11 +652,15 @@ function renderPedir(){
   const rerender=(soft)=>{if(soft&&step===1){$('#w-total').innerHTML=totalHTML()}else if(step===0){const y=scrollY;renderPedir();if(SIZES[draft.machine]&&soft!=='hp'){const c=$('#hp-card');if(c)c.scrollIntoView({behavior:'smooth',block:'start'});else scrollTo(0,y)}else setTimeout(()=>{if(draft.machine&&step===0&&view==='pedir'){step=1;renderPedir();scrollTo(0,0)}},180)}else if(!soft){const y=scrollY;renderPedir();scrollTo(0,y)}else if(step===2||step===3){const t=$('#w-total');if(t)t.innerHTML=totalHTML()}};
   if(step===0)body.innerHTML=machinesHTML();
   if(step===1)body.innerHTML=servicesHTML()+`<div id="w-total">${totalHTML()}</div>`;
-  if(step===2)body.innerHTML=`${placeHTML()}
+  if(step===2){if(draft.urgent&&!urgPosible())draft.urgent=false;if(draft.urgent)draft.date=todayISO();if(esDomingo(draft.date)||(draft.date&&draft.date<todayISO())||(!draft.urgent&&draft.date===todayISO()&&nowH()>=17))draft.date='';if(mananaPaso(draft.date)&&draft.slot==='mañana')draft.slot='';saveDraft();
+    body.innerHTML=`${placeHTML()}
     <label class="f">Referencia del lugar <span class="h">Rancho, ejido, carretera, km o liga de Google Maps</span><input type="text" data-f="place" id="w-place" value="${esc(draft.place)}"></label>
-    <label class="f">Día<input type="date" data-f="date" id="w-date" ${TEAM?'':`min="${todayISO()}"`} value="${esc(draft.date)}"></label>
-    <div class="stack" style="gap:6px"><b>Horario</b><div class="seg" id="w-slot">${['mañana','tarde'].map(s=>`<button type="button" data-slot="${s}" aria-pressed="${draft.slot===s}">${s==='mañana'?'Mañana (8–13 h)':'Tarde (13–18 h)'}</button>`).join('')}</div></div>
+    <div id="w-gps">${gpsHTML(draft.gps)}</div>
+    <div class="stack" style="gap:6px"><b>Día</b>${draft.urgent?`<div class="note"><b>Hoy, ${esc(fmtDate(draft.date))}</b> · servicio urgente</div>`:diasHTML(draft.date,'w-days')}</div>
+    <div class="stack" style="gap:6px"><b>Horario</b>${slotHTML(draft.slot,draft.date,'w-slot')}</div>
     <div id="w-total">${totalHTML()}</div>`;
+    bindGps($('#w-gps'),()=>draft.gps,v=>{draft.gps=v;saveDraft()});
+    bindDias('w-days',d=>{draft.date=d;if(mananaPaso(d)&&draft.slot==='mañana')draft.slot='';saveDraft();$('#w-slot').outerHTML=slotHTML(draft.slot,draft.date,'w-slot');bindSlot()})}
   if(step===3)body.innerHTML=`<label class="f">Nombre<input type="text" data-f="name" id="w-name" autocomplete="name" value="${esc(draft.name)}"></label>
     <label class="f">Teléfono o WhatsApp<input type="tel" data-f="phone" id="w-phone" autocomplete="tel" inputmode="tel" value="${esc(draft.phone)}"></label>
     <label class="f">Marca y modelo ${draft.machine==='camioneta'?'de la camioneta':'de la máquina'} <span class="h">Opcional. Ej. ${esc(MODEL_EJ[draft.machine]||'John Deere 5075E')}</span><input type="text" data-f="model" id="w-model" value="${esc(draft.model)}"></label>
@@ -626,8 +669,9 @@ function renderPedir(){
     <label class="f">¿Algo más que debamos saber? <span class="h">Opcional. Ruidos, fallas, acceso al terreno</span><textarea data-f="notes" id="w-notes">${esc(draft.notes)}</textarea></label>
     <div id="w-sum">${summaryHTML()}</div>`;
   bindPick(body,x=>{rerender(x);setNextLabel()});
-  body.querySelectorAll('[data-slot]').forEach(b=>b.onclick=()=>{draft.slot=b.dataset.slot;saveDraft();body.querySelectorAll('[data-slot]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
+  bindSlot();
 }
+function bindSlot(){const box=$('#w-slot');if(!box)return;box.querySelectorAll('[data-slot]').forEach(b=>b.onclick=()=>{draft.slot=b.dataset.slot;saveDraft();box.querySelectorAll('[data-slot]').forEach(x=>x.setAttribute('aria-pressed',x===b))})}
 function setNextLabel(){const b=$('#wiz-next');if(!b)return;const q=quote(draft),t=step>=1&&q.lines.some(l=>l.id!=='revision')?' · '+money(q.total):'';b.textContent=(step===3?(TEAM?'Registrar orden':'Confirmar pedido'):'Siguiente')+t}
 function summaryHTML(){
   const m=mach(draft.machine),q=quote(draft);
@@ -635,13 +679,13 @@ function summaryHTML(){
    <dt>Máquina</dt><dd>${esc(m?m.n:'')}${draft.model?' · '+esc(draft.model):''}</dd>
    <dt>Servicios</dt><dd>${q.lines.map(l=>esc(l.n)).join(', ')}</dd>
    <dt>Cuándo</dt><dd>${esc(fmtDate(draft.date))}, ${esc(draft.slot)}${draft.urgent?' · urgente':''}</dd>
-   <dt>Dónde</dt><dd>${esc(draft.muni)}${draft.place?' · '+esc(draft.place):''}</dd></dl></div>${totalHTML()}`
+   <dt>Dónde</dt><dd>${esc(draft.muni)}${draft.place?' · '+esc(draft.place):''}${okGps(draft.gps)?' · 📍 ubicación':''}</dd></dl></div>${totalHTML()}`
 }
 function validate(){
   if(step===0&&!draft.machine)return'Toca el tipo de máquina para seguir.';
   if(step===1&&!draft.services.some(x=>x!=='revision'))return'Elige al menos un servicio.';
-  if(step===2){if(!draft.muni)return'Elige el municipio.';if(!draft.date)return'Elige el día del servicio.';if(!TEAM&&draft.date<todayISO())return'Ese día ya pasó. Elige de hoy en adelante.';if(!draft.slot)return'Elige si es en la mañana o en la tarde.'}
-  if(step===3){if(!TEAM&&draft.date&&draft.date<todayISO())return'El día que elegiste ya pasó. Regresa un paso y elige otro.';if(!draft.slot)return'Regresa un paso y elige mañana o tarde.';if(draft.name.trim().length<2)return'Escribe tu nombre.';if(draft.phone.replace(/\D/g,'').length<10)return'Escribe un teléfono de 10 dígitos.'}
+  if(step===2){if(!draft.muni)return'Elige el municipio.';if(!draft.date)return'Elige el día del servicio.';if(!TEAM&&draft.date<todayISO())return'Ese día ya pasó. Elige de hoy en adelante.';if(!TEAM&&esDomingo(draft.date))return'Los domingos no trabajamos. Elige otro día.';if(!TEAM&&!draft.urgent&&draft.date===todayISO()&&nowH()>=17)return'Para hoy ya no alcanzamos. Elige otro día.';if(!draft.slot)return'Elige si es en la mañana o en la tarde.';if(!TEAM&&mananaPaso(draft.date)&&draft.slot==='mañana')return'La mañana de hoy ya pasó. Elige la tarde u otro día.'}
+  if(step===3){if(draft.urgent&&draft.date!==todayISO())return'El servicio urgente es para hoy. Regresa un paso.';if(!TEAM&&draft.date&&draft.date<todayISO())return'El día que elegiste ya pasó. Regresa un paso y elige otro.';if(!draft.slot)return'Regresa un paso y elige mañana o tarde.';if(draft.name.trim().length<2)return'Escribe tu nombre.';if(draft.phone.replace(/\D/g,'').length<10)return'Escribe un teléfono de 10 dígitos.'}
   return'';
 }
 $('#wiz-back').onclick=()=>{if(step>0){step--;renderPedir();scrollTo(0,0)}};
@@ -653,34 +697,43 @@ $('#wiz-next').onclick=async()=>{
   try{await createOrder()}finally{$('#wiz-next').disabled=false}
 };
 let lastOrder=null,pendDatos=null;
-function guardarMisDatos(d){misDatos={name:String(d.name||'').trim(),phone:String(d.phone||'').trim(),muni:d.muni||'',place:String(d.place||'').trim()};try{localStorage.setItem('ar_misdatos',JSON.stringify(misDatos))}catch(e){}}
-function borrarMisDatos(){misDatos=null;try{localStorage.removeItem('ar_misdatos')}catch(e){}Object.assign(draft,{name:'',phone:'',muni:'',place:''});saveDraft()}
-function renderMisDatos(){const c=$('#mq-datos');if(!c)return;const d=misDatos||{name:'',phone:'',muni:'',place:''};
+function guardarMisDatos(d){misDatos={name:String(d.name||'').trim(),phone:String(d.phone||'').trim(),muni:d.muni||'',place:String(d.place||'').trim(),gps:okGps(d.gps)?d.gps:''};try{localStorage.setItem('ar_misdatos',JSON.stringify(misDatos))}catch(e){}}
+function borrarMisDatos(){misDatos=null;try{localStorage.removeItem('ar_misdatos')}catch(e){}Object.assign(draft,{name:'',phone:'',muni:'',place:'',gps:''});saveDraft()}
+let mdEdit=false,mdGps='';
+function renderMisDatos(){const c=$('#mq-datos');if(!c)return;const d=misDatos||{name:'',phone:'',muni:'',place:'',gps:''};
+  if(misDatos&&!mdEdit){c.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div><h3>Mis datos</h3><p style="margin-top:4px"><b>${esc(d.name)}</b> · <span style="font-variant-numeric:tabular-nums">${esc(d.phone)}</span>${d.muni||d.place?'<br><span class="muted">'+esc([d.muni,d.place].filter(Boolean).join(' · '))+'</span>':''}${okGps(d.gps)?'<br><span class="small">📍 Ubicación guardada</span>':''}</p></div><button class="btn ghost sm" type="button" id="md-edit">Editar</button></div>`;
+    $('#md-edit').onclick=()=>{mdEdit=true;mdGps=misDatos.gps||'';renderMisDatos()};return}
+  if(!mdEdit)mdGps='';
   c.innerHTML=`<h3>Mis datos</h3><p class="muted small">${misDatos?'Se usan para llenar tus pedidos solos. Solo se guardan en este celular.':'Guárdalos para no escribirlos en cada pedido. Solo se quedan en este celular.'}</p>
    <label class="f">Nombre<input type="text" id="md-name" autocomplete="name" value="${esc(d.name)}"></label>
    <label class="f">Teléfono o WhatsApp<input type="tel" id="md-phone" inputmode="tel" autocomplete="tel" value="${esc(d.phone)}"></label>
    <label class="f">Municipio<select id="md-muni"><option value="">Elige el municipio…</option>${MUNIS.map(([n])=>`<option ${d.muni===n?'selected':''}>${esc(n)}</option>`).join('')}</select></label>
    <label class="f">Referencia del lugar <span class="h">Rancho, ejido, carretera o liga de Google Maps</span><input type="text" id="md-place" value="${esc(d.place)}"></label>
+   <div id="md-gps">${gpsHTML(mdGps)}</div>
    <p class="err" id="md-err" hidden></p>
    <button class="btn green block" type="button" id="md-save">Guardar mis datos</button>
-   ${misDatos?`<button class="btn ghost block" type="button" id="md-del">Borrar mis datos de este celular</button>`:''}`;
+   ${misDatos?`<button class="btn ghost block" type="button" id="md-cancel">Cancelar</button><button class="btn ghost block" type="button" id="md-del">Borrar mis datos de este celular</button>`:''}`;
+  bindGps($('#md-gps'),()=>mdGps,v=>{mdGps=v});const mc=$('#md-cancel');if(mc)mc.onclick=()=>{mdEdit=false;renderMisDatos()};
   $('#md-save').onclick=()=>{const n=$('#md-name').value.trim(),ph=$('#md-phone').value.trim(),er=$('#md-err');
     if(n.length<2){er.textContent='Escribe tu nombre.';er.hidden=false;return}if(ph.replace(/\D/g,'').length<10){er.textContent='Escribe un teléfono de 10 dígitos.';er.hidden=false;return}
-    guardarMisDatos({name:n,phone:ph,muni:$('#md-muni').value,place:$('#md-place').value});if(!lastFolio)Object.assign(draft,misDatos);saveDraft();toast('Datos guardados');renderMisDatos()};
-  const dl=$('#md-del');if(dl)dl.onclick=()=>{dl.outerHTML=`<div class="flow"><button class="btn ghost sm" type="button" id="md-no">No</button><button class="btn sm" type="button" id="md-si" style="background:var(--danger);color:var(--on-danger)">Sí, borrar</button></div>`;$('#md-no').onclick=renderMisDatos;$('#md-si').onclick=()=>{borrarMisDatos();toast('Datos borrados');renderMisDatos()}};
+    guardarMisDatos({name:n,phone:ph,muni:$('#md-muni').value,place:$('#md-place').value,gps:mdGps});mdEdit=false;if(!lastFolio)Object.assign(draft,misDatos);saveDraft();toast('Datos guardados');renderMisDatos()};
+  const dl=$('#md-del');if(dl)dl.onclick=()=>{dl.outerHTML=`<div class="flow"><button class="btn ghost sm" type="button" id="md-no">No</button><button class="btn sm" type="button" id="md-si" style="background:var(--danger);color:var(--on-danger)">Sí, borrar</button></div>`;$('#md-no').onclick=renderMisDatos;$('#md-si').onclick=()=>{borrarMisDatos();mdEdit=false;mdGps='';toast('Datos borrados');renderMisDatos()}};
 }
 function newFolio(){const d=new Date(),p=n=>String(n).padStart(2,'0');const r=Math.random().toString(36).slice(2,5).toUpperCase();return`AR-${p(d.getMonth()+1)}${p(d.getDate())}-${r}`}
 function buildOrder(d,folio,origen){
   const q=quote(d),t=v=>String(v||'').trim();
-  return{folio,machine:d.machine,model:t(d.model),services:[...d.services],muni:d.muni,place:t(d.place),urgent:!!d.urgent,
+  return{folio,machine:d.machine,model:t(d.model),services:[...d.services],muni:d.muni,place:t(d.place),urgent:!!d.urgent,gps:okGps(d.gps)?d.gps:'',
     date:d.date,slot:d.slot,name:t(d.name),phone:t(d.phone),hours:d.hours||'',week:Number(d.week)||0,notes:t(d.notes),
     interval:d.interval||null,junto:!!d.junto&&SMALL.includes(d.machine),brand:brandKey(d),hp:sizeOf(d)?sizeOf(d).id:null,total:q.total,traslado:q.traslado,costo:q.costo,origen:origen||'app',estado:'pendiente',tecnico:'',done:[],techNotes:'',created:new Date().toISOString(),updated:new Date().toISOString()};
 }
-const NUBE={url:'https://edknbmbzipckgbshmuha.supabase.co',key:'sb_publishable_B8O7gCqsK_LJgCPVqEew8w_HxunwAQM'};
-function enviarNube(o){try{const p=Object.assign({},o);['id','nube','estadoNube','llegada','recordado'].forEach(k=>delete p[k]);fetch(NUBE.url+'/rest/v1/rpc/crear_pedido',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json',apikey:NUBE.key},body:JSON.stringify({p})}).then(r=>{if(r.ok){const lo=localOrders.find(x=>x.id===o.folio);if(lo){lo.nube=true;saveLocal()}}}).catch(()=>{})}catch(e){}}
+const NUBE={url:'https://edknbmbzipckgbshmuha.supabase.co',key:'sb_publishable_B8O7gCqsK_LJgCPVqEew8w_HxunwAQM',vapid:'BK5HPciZDBTkYm1x4yMFwFZy_VrAnm8HBxk3Tt5D0-vPmnnyvSfaDHEMrP4TtNkoYghBfSSE7EW7It6QZgu2K9E'};
+async function rpc(fn,body){const r=await fetch(NUBE.url+'/rest/v1/rpc/'+fn,{method:'POST',headers:{'Content-Type':'application/json',apikey:NUBE.key},body:JSON.stringify(body)});
+  if(!r.ok){let m='';try{m=(await r.json()).message||''}catch(e){}const e=new Error(m||'sin conexión');e.srv=!!m;throw e}try{return await r.json()}catch(e){return null}}
+const errMsg=e=>e&&e.srv?e.message.charAt(0).toUpperCase()+e.message.slice(1)+'.':'Sin señal. Intenta otra vez o escríbenos por WhatsApp.';
+function enviarNube(o){try{const p=Object.assign({},o);['id','nube','estadoNube','llegada','recordado'].forEach(k=>delete p[k]);fetch(NUBE.url+'/rest/v1/rpc/crear_pedido',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json',apikey:NUBE.key},body:JSON.stringify({p})}).then(r=>{if(r.ok){const lo=localOrders.find(x=>x.id===o.folio);if(lo){lo.nube=true;saveLocal();suscribirFolio(lo)}}}).catch(()=>{})}catch(e){}}
 let syncing=false,cliOpen=null;
 async function syncPedidos(){
-  if(TEAM||syncing)return;const L=localOrders.filter(o=>!['terminada','cancelada'].includes(o.estado));if(!L.length)return;syncing=true;
+  if(TEAM||syncing)return;const lim=isoD(addDays(new Date(),-45));const L=localOrders.filter(o=>o.estado!=='cancelada'&&(o.estado!=='terminada'||(o.date||'')>=lim));if(!L.length)return;syncing=true;
   L.filter(o=>o.nube===false&&(o.date||'')>=todayISO()).forEach(o=>enviarNube(Object.assign({},o,{folio:o.folio||o.id})));
   try{const r=await fetch(NUBE.url+'/rest/v1/rpc/estado_pedidos',{method:'POST',headers:{'Content-Type':'application/json',apikey:NUBE.key},body:JSON.stringify({folios:L.map(o=>o.id).slice(0,30)})});
     if(!r.ok)return;const rows=await r.json();if(!Array.isArray(rows))return;const m=Object.fromEntries(rows.map(x=>[x.id,x]));let ch=false;
@@ -692,8 +745,12 @@ async function syncPedidos(){
       if((x.llegada||'')!==(o.llegada||'')){o.llegada=x.llegada||'';ch=true}
       if(x.fecha&&x.fecha!==o.date){o.date=x.fecha;ch=true}
       if(x.horario&&x.horario!==o.slot){o.slot=x.horario;ch=true}
-      if(x.total!=null&&Number(x.total)>0&&Number(x.total)!==o.total){o.total=Number(x.total);ch=true}});
-    if(ch){saveLocal();orders=localOrders;renderAll();if(!$('#sheet').hidden&&cliOpen&&$('#co-done')){const o=orders.find(x=>x.id===cliOpen);if(o&&o.estado!=='cancelada')renderClientOrder(o);else closeSheet()}}}
+      if(x.total!=null&&Number(x.total)>0&&Number(x.total)!==o.total){o.total=Number(x.total);ch=true}
+      const nf=Number(x.nfotos)||0;if(nf!==(o.nfotos||0)){o.nfotos=nf;ch=true}
+      if(x.calif&&!o.calif){o.calif={e:Number(x.calif)};ch=true}
+      if(x.solicitud===false&&o.solicitud){delete o.solicitud;ch=true}
+      if(!o.avisos)suscribirFolio(o)});
+    if(ch){saveLocal();orders=localOrders;renderAll();if(!$('#sheet').hidden&&cliOpen&&$('#co-done')){const o=orders.find(x=>x.id===cliOpen);if(o&&o.estado!=='cancelada'&&!$('#sheet-panel').contains(document.activeElement))renderClientOrder(o);else if(!o||o.estado==='cancelada')closeSheet()}}}
   catch(e){}finally{syncing=false}
 }
 const estCli=o=>o.estadoNube||o.estado;
@@ -721,7 +778,7 @@ async function createOrder(){
   const synced=await saveOrder(o);
   if(!TEAM){const lo=localOrders.find(x=>x.id===folio);if(lo&&lo.nube!==true){lo.nube=false;saveLocal()}}
   lastOrder=Object.assign({id:folio,synced},o);lastFolio=folio;
-  pendDatos=TEAM?null:{name:draft.name.trim(),phone:draft.phone.trim(),muni:draft.muni,place:draft.place.trim()};draft=Object.assign(blankDraft(),TEAM?{}:(misDatos||{}));saveDraft();
+  pendDatos=TEAM?null:{name:draft.name.trim(),phone:draft.phone.trim(),muni:draft.muni,place:draft.place.trim(),gps:draft.gps||''};draft=Object.assign(blankDraft(),TEAM?{}:(misDatos||{}));saveDraft();
   renderPedir();scrollTo(0,0);renderHomeNext();if(view==='tecnico')renderTecnico();
 }
 
@@ -1010,7 +1067,11 @@ function renderHomeNext(){if(!$('#home-next'))return;
   const up=TEAM?orders.filter(o=>o.date>=t&&!['terminada','cancelada'].includes(o.estado)).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3):orders.filter(o=>!['terminada','cancelada'].includes(o.estado)).sort((a,b)=>(a.date||'').localeCompare(b.date||'')).slice(0,5);
   if(!TEAM){const due=maquinas.map((m,ix)=>({m,di:dueInfo(m,m.updated)})).filter(x=>(x.di.date-Date.now())/864e5<=21);
     const hn=$('#home-due');if(hn)hn.innerHTML=due.length?`<div class="card stack" style="border-color:var(--warn)"><h3>Se acerca tu servicio</h3>${due.map(x=>`<p><b>${esc(dueTitle(x.m,x.di))}</b><br><span class="muted">aprox. ${x.di.date.toLocaleDateString('es-MX',{day:'numeric',month:'long'})}</span></p>`).join('')}<a class="btn primary block" href="#maquinas">Ver mis máquinas</a></div>`:''}
-  $('#home-next').innerHTML=`<h3>${TEAM?'Próximos servicios':'Mis pedidos'}</h3>`+(up.length?up.map(o=>`<button type="button" class="order st-${TEAM?o.estado:estCli(o)}" data-o="${esc(o.id)}"><div class="r1"><b>${esc(o.name)}</b><span class="pill st-${TEAM?o.estado:estCli(o)}">${stName(TEAM?o.estado:estCli(o))}</span></div><div class="r2"><span>${esc(fmtDate(o.date))} · ${esc(o.muni)}</span><span>${money(o.total||0)}</span></div>${!TEAM&&estCli(o)==='camino'?`<div class="small" style="color:var(--green);font-weight:700">Va en camino${horaLleg(o)?' · llega aprox. '+esc(horaLleg(o)):''}</div>`:''}</button>`).join(''):`<p class="muted">No hay servicios agendados todavía.</p>`);
+  $('#home-next').innerHTML=`<h3>${TEAM?'Próximos servicios':'Mis pedidos'}</h3>`+(up.length?up.map(o=>`<button type="button" class="order st-${TEAM?o.estado:estCli(o)}" data-o="${esc(o.id)}"><div class="r1"><b>${esc(o.name)}</b><span class="pill st-${TEAM?o.estado:estCli(o)}">${stName(TEAM?o.estado:estCli(o))}</span></div><div class="r2"><span>${esc(fmtDate(o.date))} · ${esc(o.muni)}</span><span>${money(o.total||0)}</span></div>${!TEAM&&o.solicitud?'<div class="small muted">Pediste cambio de fecha</div>':''}${!TEAM&&estCli(o)==='terminada'&&!o.calif?'<div class="small" style="color:var(--green);font-weight:700">¿Cómo te fue? Califícanos</div>':''}${!TEAM&&estCli(o)==='camino'?`<div class="small" style="color:var(--green);font-weight:700">Va en camino${horaLleg(o)?' · llega aprox. '+esc(horaLleg(o)):''}</div>`:''}</button>`).join(''):`<p class="muted">No hay servicios agendados todavía.</p>`);
+  if(!TEAM){const prev=orders.filter(o=>o.estado==='terminada').sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,8);
+    $('#home-next').insertAdjacentHTML('beforeend',(prev.length?`<details><summary style="cursor:pointer;font-weight:700">Pedidos anteriores (${prev.length})</summary><div class="stack" style="gap:8px;margin-top:10px">${prev.map(o=>`<button type="button" class="order st-terminada" data-o="${esc(o.id)}"><div class="r1"><b>${esc((mach(o.machine)||{}).n||'Servicio')}${o.model?' · '+esc(o.model):''}</b><span class="small muted">${esc(fmtDate(o.date))}</span></div><div class="r2"><span>${o.calif?'★'.repeat(o.calif.e):'Califica tu servicio'}</span><span>Pedir otra vez →</span></div></button>`).join('')}</div></details>`:'')+
+      `<button type="button" class="linkbtn small" id="hn-buscar" style="align-self:flex-start">¿Hiciste un pedido en otro celular? Búscalo con tu folio</button>`);
+    $('#hn-buscar').onclick=buscarSheet}
   $('#home-next').querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>openOrder(b.dataset.o));
 }
 
@@ -1035,9 +1096,11 @@ function dueInfo(x,base){
 }
 function dueTitle(x,di){const m=mach(x.machine);return`Servicio${di.at?' de las '+di.at.toLocaleString('es-MX')+' h':''} – ${m?m.n:''}${x.model?' · '+x.model:''}`}
 function gcalLink(title,date,details){const d=isoD(date).replace(/-/g,''),e=isoD(addDays(date,1)).replace(/-/g,'');return'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(title)+'&dates='+d+'/'+e+'&details='+encodeURIComponent(details)}
-function icsText(title,date,details){const d=isoD(date).replace(/-/g,''),e=isoD(addDays(date,1)).replace(/-/g,''),esc2=t=>String(t).replace(/[,;\\]/g,m=>'\\'+m).replace(/\n/g,'\\n');
-  return['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//AgroRuta//ES','BEGIN:VEVENT','UID:'+Date.now()+'@agroruta','DTSTAMP:'+new Date().toISOString().replace(/[-:]/g,'').slice(0,15)+'Z','DTSTART;VALUE=DATE:'+d,'DTEND;VALUE=DATE:'+e,'SUMMARY:'+esc2(title),'DESCRIPTION:'+esc2(details),'BEGIN:VALARM','TRIGGER:-P3D','ACTION:DISPLAY','DESCRIPTION:'+esc2(title),'END:VALARM','BEGIN:VALARM','TRIGGER:-PT12H','ACTION:DISPLAY','DESCRIPTION:'+esc2(title),'END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n')}
-function downloadIcs(title,date,details){try{const u=URL.createObjectURL(new Blob([icsText(title,date,details)],{type:'text/calendar'}));const a=document.createElement('a');a.href=u;a.download='servicio-agroruta.ics';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove()},1000)}catch(e){toast('No se pudo descargar')}}
+function icsText(title,date,details,h){const d=isoD(date).replace(/-/g,''),e=isoD(addDays(date,1)).replace(/-/g,''),esc2=t=>String(t).replace(/[,;\\]/g,m=>'\\'+m).replace(/\n/g,'\\n');
+  const al=t=>['BEGIN:VALARM','TRIGGER:'+t,'ACTION:DISPLAY','DESCRIPTION:'+esc2(title),'END:VALARM'];
+  const when=h?['DTSTART:'+d+'T'+h[0]+'00','DTEND:'+d+'T'+h[1]+'00']:['DTSTART;VALUE=DATE:'+d,'DTEND;VALUE=DATE:'+e];
+  return['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//AgroRuta//ES','BEGIN:VEVENT','UID:'+Date.now()+'@agroruta','DTSTAMP:'+new Date().toISOString().replace(/[-:]/g,'').slice(0,15)+'Z',...when,'SUMMARY:'+esc2(title),'DESCRIPTION:'+esc2(details),...(h?[...al('-PT14H'),...al('-PT1H')]:[...al('-P3D'),...al('-PT12H')]),'END:VEVENT','END:VCALENDAR'].join('\r\n')}
+function downloadIcs(title,date,details,h){try{const u=URL.createObjectURL(new Blob([icsText(title,date,details,h)],{type:'text/calendar'}));const a=document.createElement('a');a.href=u;a.download='servicio-agroruta.ics';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove()},1000)}catch(e){toast('No se pudo descargar')}}
 function remindDetails(x,di){return`Te toca ${di.iv?'el servicio de '+di.iv+' h':'tu siguiente servicio'} de tu ${(mach(x.machine)||{}).n||'máquina'}${x.model?' '+x.model:''}. Agéndalo con AgroRuta por WhatsApp: ${waLink('Hola, quiero agendar el servicio'+(di.iv?' de '+di.iv+' h':'')+' de mi '+((mach(x.machine)||{}).n||'máquina')+(x.model?' '+x.model:''))}`}
 const mqKey=x=>[x.machine,x.brand||'',(x.model||'').trim().toLowerCase(),x.hp||''].join('|');
 function upsertMaquina(x,serv){
@@ -1064,7 +1127,7 @@ function recordServiceSheet(x,fromLink){
     const fecha=x.fecha||todayISO();
     const mq=upsertMaquina(Object.assign({},x,{hours:h,week:w}),{date:fecha,folio:x.folio||'',interval:Number(x.interval)||null,services:x.services||[],total:Number(x.total)||0});
     const lo=localOrders.find(o=>o.id===x.folio);if(lo){lo.estado='terminada';lo.terminadaEn=fecha;saveLocal();orders=localOrders}
-    closeSheet();toast('Servicio guardado');showReminder(mq);
+    closeSheet();renderAll();toast('Servicio guardado');showReminder(mq);
   };
 }
 function showReminder(mq){
@@ -1077,25 +1140,140 @@ function showReminder(mq){
    <button class="btn ghost block" type="button" onclick="closeSheet()">Listo</button></div>`);
   $('#rm-ics').onclick=()=>downloadIcs(t,di.date,det);
 }
+const hdrSheet=(t,back)=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="muted">${t}</span><button class="btn ghost sm" type="button" ${back?'data-back':'onclick="closeSheet()"'}>${back?'Atrás':'Cerrar'}</button></div>`;
 function renderClientOrder(o){
-  const m=mach(o.machine);cliOpen=o.id;const en=estCli(o);
-  openSheet(`<div class="stack"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="muted">${esc(o.id)}</span><button class="btn ghost sm" type="button" onclick="closeSheet()">Cerrar</button></div>
-   <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><h2>${esc(m?m.n:'Pedido')}${o.model?' · '+esc(o.model):''}</h2>${o.estado!=='terminada'?`<span class="pill st-${en}">${esc(stName(en))}</span>`:''}</div>
-   ${en==='confirmada'?'<div class="note">AgroRuta ya confirmó tu servicio.</div>':en==='camino'?`<div class="note"><b>El técnico va en camino.</b>${horaLleg(o)?' Llega aprox. a las <b>'+esc(horaLleg(o))+'</b>':''}</div>`:en==='servicio'?'<div class="note">El técnico ya está trabajando en tu máquina.</div>':''}
-   <div class="card"><dl class="kv"><dt>Cuándo</dt><dd>${esc(fmtDate(o.date))}, ${esc(o.slot)}</dd><dt>Dónde</dt><dd>${esc(o.muni)}${o.place?' · '+esc(o.place):''}</dd>
+  const m=mach(o.machine);cliOpen=o.id;const en=estCli(o),fin=en==='terminada'||o.estado==='terminada',canc=en==='cancelada'||o.estado==='cancelada',sol=o.solicitud&&!fin&&!canc;
+  const est=fin?'terminada':canc?'cancelada':en;
+  openSheet(`<div class="stack">${hdrSheet(esc(o.id))}
+   <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><h2>${esc(m?m.n:'Pedido')}${o.model?' · '+esc(o.model):''}</h2><span class="pill st-${est}">${esc(stName(est))}</span></div>
+   ${en==='confirmada'&&!fin?'<div class="note">AgroRuta ya confirmó tu servicio.</div>':en==='camino'?`<div class="note"><b>El técnico va en camino.</b>${horaLleg(o)?' Llega aprox. a las <b>'+esc(horaLleg(o))+'</b>':''}</div>`:en==='servicio'?'<div class="note">El técnico ya está trabajando en tu máquina.</div>':''}
+   ${sol?`<div class="note">Pediste cambiarlo al <b>${esc(fmtDate(o.solicitud.fecha))}, ${esc(o.solicitud.slot)}</b>. Te avisamos cuando lo confirmemos.</div>`:''}
+   <div class="card"><dl class="kv"><dt>Cuándo</dt><dd>${esc(fmtDate(o.date))}, ${esc(o.slot)}</dd><dt>Dónde</dt><dd>${esc(o.muni)}${o.place?' · '+esc(o.place):''}${okGps(o.gps)?` · <a href="https://maps.google.com/?q=${o.gps}" target="_blank" rel="noopener">📍 mapa</a>`:''}</dd>
    <dt>Servicios</dt><dd>${(o.services||[]).filter(id=>id!=='revision').map(id=>esc((svc(id)||{n:id}).n)).join(', ')}</dd><dt>Total</dt><dd><b>${money(o.total||0)}</b></dd></dl></div>
-   ${o.estado==='terminada'?'<p class="muted">Este servicio ya está en tu historial.</p>':`<a class="btn ghost block" href="${waLink(quoteText(o,o.id))}" target="_blank" rel="noopener">Reenviar pedido por WhatsApp</a>
-   <button class="btn green block" type="button" id="co-done">Ya me hicieron el servicio</button>
-   <button class="btn ghost block" type="button" id="co-del">Quitar de mis pedidos</button>`}</div>`);
+   ${fin?`${o.nube!==false?(o.calif?`<div class="card stack" style="gap:6px;text-align:center"><b>Tu calificación</b><div style="font-size:28px;color:#E2A21B">${'★'.repeat(o.calif.e)}<span style="color:var(--line)">${'★'.repeat(5-o.calif.e)}</span></div><span class="muted small">¡Gracias por tu opinión!</span></div>`:
+       `<div class="card stack" style="gap:10px"><b style="text-align:center">¿Cómo te fue con el servicio?</b><div class="stars" id="co-stars">${[1,2,3,4,5].map(n=>`<button type="button" data-st="${n}" aria-pressed="false" aria-label="${n} estrella${n>1?'s':''}">★</button>`).join('')}</div>
+        <label class="f">Comentario <span class="h">Opcional</span><textarea id="co-com" rows="2" maxlength="500"></textarea></label><p class="err" id="co-cerr" hidden></p><button class="btn green block" type="button" id="co-calif" disabled>Enviar calificación</button></div>`):''}
+     ${o.nfotos>0?`<button class="btn ghost block" type="button" id="co-fotos">Ver fotos de tu servicio (${o.nfotos})</button>`:''}
+     <button class="btn primary block" type="button" id="co-otra">Pedir lo mismo otra vez</button>
+     ${o.estado!=='terminada'?'<button class="btn ghost block" type="button" id="co-done">Guardar en el historial de mi máquina</button>':''}
+     <button class="btn ghost block" type="button" id="co-del">Quitar de mis pedidos</button>`
+   :canc?`<p class="muted">${o.canceladaPor==='cliente'?'Cancelaste este servicio.':'Este servicio se canceló.'}</p><button class="btn primary block" type="button" id="co-otra">Pedir lo mismo otra vez</button><button class="btn ghost block" type="button" id="co-del">Quitar de mis pedidos</button>`
+   :`${avisoBtnHTML(o)}
+   <button class="btn ghost block" type="button" id="co-cal">Agregar a mi calendario</button>
+   ${['pendiente','confirmada'].includes(en)?'<button class="btn ghost block" type="button" id="co-cambiar">Cambiar día o cancelar</button>':''}
+   <a class="btn ghost block" href="${waLink(quoteText(o,o.id))}" target="_blank" rel="noopener">Escribirnos por WhatsApp</a>
+   <button class="btn ghost block" type="button" id="co-done">Ya me hicieron el servicio</button>`}</div>`);
   const b=$('#co-done');if(b)b.onclick=()=>recordServiceSheet(Object.assign({},o,{folio:o.id,fecha:todayISO()}));
-  const d=$('#co-del');if(d)d.onclick=()=>{d.outerHTML=`<div class="card stack"><b>¿Quitar este pedido de tu lista?</b><p class="muted small">Solo se quita de este celular. Si quieres cancelar el servicio, avísanos por WhatsApp.</p><div class="flow"><button class="btn ghost sm" type="button" id="co-no">No</button><button class="btn sm" type="button" id="co-si" style="background:var(--danger);color:var(--on-danger)">Sí, quitar</button></div></div>`;
+  const ca=$('#co-cal');if(ca)ca.onclick=()=>calSheet(o,true);
+  const cc=$('#co-cambiar');if(cc)cc.onclick=()=>cambiarSheet(o);
+  const ot=$('#co-otra');if(ot)ot.onclick=()=>pedirOtraVez(o);
+  const fo=$('#co-fotos');if(fo)fo.onclick=()=>fotosSheet(o);
+  bindAviso(o);
+  const st=$('#co-stars');if(st){let n=0;st.querySelectorAll('[data-st]').forEach(x=>x.onclick=()=>{n=Number(x.dataset.st);st.querySelectorAll('[data-st]').forEach(y=>y.setAttribute('aria-pressed',Number(y.dataset.st)<=n));$('#co-calif').disabled=false});
+    $('#co-calif').onclick=async()=>{const bt=$('#co-calif'),er=$('#co-cerr');if(!n)return;bt.disabled=true;bt.textContent='Enviando…';
+      try{await rpc('cliente_accion',{p:{folio:o.id,tel:o.phone,accion:'calificar',estrellas:n,comentario:$('#co-com').value.trim().slice(0,500)}});o.calif={e:n};saveLocal();toast('¡Gracias por calificarnos!');renderClientOrder(o);renderHomeNext()}
+      catch(e){er.textContent=errMsg(e);er.hidden=false;bt.disabled=false;bt.textContent='Enviar calificación'}}}
+  const d=$('#co-del');if(d)d.onclick=()=>{d.outerHTML=`<div class="card stack"><b>¿Quitar este pedido de tu lista?</b><p class="muted small">Solo se quita de este celular.${!fin&&!canc?' Si quieres cancelar el servicio, usa “Cambiar día o cancelar”.':''}</p><div class="flow"><button class="btn ghost sm" type="button" id="co-no">No</button><button class="btn sm" type="button" id="co-si" style="background:var(--danger);color:var(--on-danger)">Sí, quitar</button></div></div>`;
     $('#co-no').onclick=()=>renderClientOrder(o);$('#co-si').onclick=()=>{const i=localOrders.findIndex(x=>x.id===o.id);if(i>=0)localOrders.splice(i,1);saveLocal();orders=localOrders;closeSheet();renderAll();toast('Pedido quitado')}};
 }
+function cambiarSheet(o){
+  let f='',sl='';
+  openSheet(`<div class="stack">${hdrSheet(esc(o.id),true)}<h2>Cambiar día o cancelar</h2>
+   <div class="card stack" style="gap:10px"><h3>Cambiar a otro día</h3><p class="muted small">Ahora: ${esc(fmtDate(o.date))}, ${esc(o.slot)}</p>
+    ${diasHTML('','cc-days',o.date)}<div id="cc-slotw">${slotHTML('','','cc-slot')}</div>
+    <label class="f">¿Algo que debamos saber? <span class="h">Opcional</span><input type="text" id="cc-mot" maxlength="300"></label>
+    <p class="err" id="cc-err" hidden></p><button class="btn green block" type="button" id="cc-ok">Pedir el cambio</button></div>
+   <div class="card stack" style="gap:10px"><h3>Cancelar el servicio</h3>
+    <label class="f">¿Por qué lo cancelas? <span class="h">Opcional, nos ayuda a mejorar</span><input type="text" id="cx-mot" maxlength="300"></label>
+    <p class="err" id="cx-err" hidden></p><button class="btn block" type="button" id="cx-ok" style="background:var(--danger);color:var(--on-danger)">Cancelar mi servicio</button></div></div>`);
+  $('#sheet-panel [data-back]').onclick=()=>renderClientOrder(o);
+  const bs=()=>{$('#cc-slot').querySelectorAll('[data-slot]').forEach(b=>b.onclick=()=>{sl=b.dataset.slot;$('#cc-slot').querySelectorAll('[data-slot]').forEach(x=>x.setAttribute('aria-pressed',x===b))})};bs();
+  bindDias('cc-days',d=>{f=d;if(mananaPaso(d)&&sl==='mañana')sl='';$('#cc-slotw').innerHTML=slotHTML(sl,f,'cc-slot');bs()});
+  const fail=(id,e)=>{const er=$(id);er.textContent=errMsg(e);er.hidden=false};
+  $('#cc-ok').onclick=async()=>{const er=$('#cc-err');er.hidden=true;
+    if(!f){er.textContent='Elige el día nuevo.';er.hidden=false;return}if(esDomingo(f)){er.textContent='Los domingos no trabajamos.';er.hidden=false;return}if(!sl){er.textContent='Elige mañana o tarde.';er.hidden=false;return}
+    if(f===o.date&&sl===o.slot){er.textContent='Es el mismo día y horario que ya tienes.';er.hidden=false;return}
+    const bt=$('#cc-ok');bt.disabled=true;bt.textContent='Enviando…';
+    try{await rpc('cliente_accion',{p:{folio:o.id,tel:o.phone,accion:'cambio',fecha:f,slot:sl,motivo:$('#cc-mot').value.trim()}});o.solicitud={fecha:f,slot:sl};saveLocal();renderAll();toast('Listo, te avisamos cuando lo confirmemos');renderClientOrder(o)}
+    catch(e){fail('#cc-err',e);bt.disabled=false;bt.textContent='Pedir el cambio'}};
+  $('#cx-ok').onclick=async()=>{const bt=$('#cx-ok');
+    if(!bt.dataset.sure){bt.dataset.sure='1';bt.textContent='Toca otra vez para cancelar';return}
+    bt.disabled=true;bt.textContent='Cancelando…';
+    try{await rpc('cliente_accion',{p:{folio:o.id,tel:o.phone,accion:'cancelar',motivo:$('#cx-mot').value.trim()}});o.estado='cancelada';o.estadoNube='cancelada';o.canceladaPor='cliente';delete o.solicitud;saveLocal();orders=localOrders;closeSheet();renderAll();toast('Servicio cancelado. Ya les avisamos.')}
+    catch(e){fail('#cx-err',e);bt.disabled=false;delete bt.dataset.sure;bt.textContent='Cancelar mi servicio'}};
+}
+function calSheet(o,back){
+  const m=mach(o.machine),t=`Servicio AgroRuta – ${m?m.n:'máquina'}${o.model?' '+o.model:''}`,h=o.slot==='tarde'?['13','18']:['08','13'];
+  const det=`Horario: ${o.slot==='tarde'?'tarde (1 a 6 pm)':'mañana (8 am a 1 pm)'}. Lugar: ${o.muni}${o.place?', '+o.place:''}. Folio ${o.id}. Dudas: WhatsApp ${WA_SHOW}`;
+  const d=String(o.date||'').replace(/-/g,''),g='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(t)+'&dates='+d+'T'+h[0]+'0000/'+d+'T'+h[1]+'0000&ctz=America/Mexico_City&details='+encodeURIComponent(det);
+  const [y,mo,da]=String(o.date).split('-').map(Number);
+  openSheet(`<div class="stack">${hdrSheet(esc(o.id),back)}<h2>Agregar a mi calendario</h2><p>Te llega un aviso la noche anterior y una hora antes.</p>
+   <a class="btn primary block" href="${g}" target="_blank" rel="noopener">Google Calendar</a>
+   <button class="btn ghost block" type="button" id="cal-ics">Calendario del iPhone u otro</button></div>`);
+  const bk=$('#sheet-panel [data-back]');if(bk)bk.onclick=()=>renderClientOrder(o);
+  $('#cal-ics').onclick=()=>downloadIcs(t,new Date(y,mo-1,da),det,h.map(x=>x+'00'));
+}
+/* avisos (notificaciones) */
+const pushOK=()=>'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+const esIOS=()=>/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const instalada=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
+const avisosOn=()=>{try{return localStorage.getItem('ar_push')==='1'&&Notification.permission==='granted'}catch(e){return false}};
+function avisoBtnHTML(o){if(o.avisos&&avisosOn())return'<p class="small muted" style="text-align:center">🔔 Te avisamos aquí cuando confirmemos y cuando vayamos en camino.</p>';
+  if(!pushOK()&&!esIOS())return'';return'<button class="btn green block" type="button" data-aviso>🔔 Avisarme cuando confirmen y vayan en camino</button>'}
+function bindAviso(o){const b=$('#sheet:not([hidden]) [data-aviso]')||$('#wiz-body [data-aviso]');if(b)b.onclick=()=>activarAvisos(o,b)}
+function u8(b){const p='='.repeat((4-b.length%4)%4),r=atob((b+p).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(r,c=>c.charCodeAt(0))}
+async function miSub(pedir){const reg=await Promise.race([navigator.serviceWorker.ready,new Promise((_,x)=>setTimeout(()=>x(new Error('sw')),8000))]);
+  let s=await reg.pushManager.getSubscription();if(!s&&pedir)s=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:u8(NUBE.vapid)});return s}
+async function suscribirFolio(o,pedir){
+  if(TEAM||!o||o.avisos||o.nube!==true||!pushOK())return false;if(!pedir&&!avisosOn())return false;
+  if(['terminada','cancelada'].includes(estCli(o))||o.estado==='terminada')return false;
+  try{const s=await miSub(pedir);if(!s)return false;await rpc('cliente_accion',{p:{folio:o.id||o.folio,tel:o.phone,accion:'avisos',sub:s.toJSON()}});o.avisos=true;saveLocal();return true}catch(e){if(pedir)throw e;return false}}
+async function activarAvisos(o,btn){
+  if(esIOS()&&!instalada()){iosSheet(o);return}
+  if(!pushOK()){toast('Tu celular no permite avisos. Te escribimos por WhatsApp.');return}
+  if(o.nube!==true){toast('Tu pedido todavía no nos llega. Revisa tu señal e intenta en un momento.');syncPedidos();return}
+  btn.disabled=true;btn.textContent='Activando…';
+  try{const p=await Notification.requestPermission();if(p!=='granted'){toast('No se activaron. Revisa los permisos de notificaciones.');btn.disabled=false;btn.textContent='🔔 Avisarme cuando confirmen y vayan en camino';return}
+    try{localStorage.setItem('ar_push','1')}catch(e){}
+    const lo=localOrders.find(x=>x.id===o.id)||o;await suscribirFolio(lo,true);o.avisos=true;
+    for(const x of localOrders)if(x!==lo)await suscribirFolio(x);
+    btn.outerHTML='<p class="small muted" style="text-align:center">🔔 Listo. Te avisamos aquí cuando confirmemos y cuando vayamos en camino.</p>';toast('Avisos activados')}
+  catch(e){toast(errMsg(e));btn.disabled=false;btn.textContent='🔔 Avisarme cuando confirmen y vayan en camino'}}
+function iosSheet(o){openSheet(`<div class="stack">${hdrSheet('Avisos en iPhone')}<h2>Primero instala la app</h2>
+  <p>En iPhone los avisos solo llegan si AgroRuta está en tu pantalla de inicio:</p>
+  <ol style="margin:0;padding-left:22px;display:grid;gap:8px;font-size:16px"><li>Abajo en Safari toca <b>Compartir</b> (el cuadro con la flechita).</li><li>Elige <b>Agregar a inicio</b> y luego <b>Agregar</b>.</li><li>Abre AgroRuta desde tu pantalla de inicio.</li><li>En <b>Inicio</b> toca “Búscalo con tu folio”, escribe <b>${esc(o.id)}</b> y tu teléfono, y activa los avisos.</li></ol>
+  <button class="btn ghost block" type="button" id="ios-cp">Copiar mi folio</button></div>`);$('#ios-cp').onclick=()=>{navigator.clipboard?.writeText(o.id).then(()=>toast('Folio copiado'),()=>toast('Tu folio: '+o.id))}}
+/* buscar pedido con folio */
+function buscarSheet(){openSheet(`<div class="stack">${hdrSheet('Buscar pedido')}<h2>Buscar mi pedido</h2><p class="muted">Escribe el folio que te dimos (empieza con AR-) y el teléfono con el que pediste.</p>
+  <label class="f">Folio<input type="text" id="bs-f" autocapitalize="characters" placeholder="AR-1111-ABC"></label>
+  <label class="f">Teléfono<input type="tel" id="bs-t" inputmode="tel" value="${esc(misDatos?.phone||'')}"></label><p class="err" id="bs-err" hidden></p>
+  <button class="btn green block" type="button" id="bs-go">Buscar</button></div>`);
+  $('#bs-go').onclick=async()=>{const f=$('#bs-f').value.trim().toUpperCase().replace(/\s+/g,''),t=$('#bs-t').value.trim(),er=$('#bs-err'),bt=$('#bs-go');er.hidden=true;
+    if(!/^AR-\d{4}-[A-Z0-9]{3,6}$/.test(f)){er.textContent='Revisa el folio. Se ve así: AR-1111-ABC';er.hidden=false;return}if(t.replace(/\D/g,'').length<10){er.textContent='Escribe tu teléfono de 10 dígitos.';er.hidden=false;return}
+    if(localOrders.some(x=>x.id===f)){closeSheet();openOrder(f);return}
+    bt.disabled=true;bt.textContent='Buscando…';
+    try{const p=await rpc('mi_pedido',{folio:f,tel:t});if(!p||!p.folio)throw Object.assign(new Error('no encontramos ese pedido. Revisa el folio y el teléfono'),{srv:true});
+      const o=Object.assign({done:[]},p,{id:p.folio,nube:true,estado:p.estado==='terminada'?'terminada':p.estado==='cancelada'?'cancelada':'pendiente',estadoNube:p.estado,phone:t});if(p.calif)o.calif={e:Number(p.calif)};else delete o.calif;
+      localOrders.unshift(o);saveLocal();orders=localOrders;closeSheet();renderAll();toast('Pedido encontrado');openOrder(o.id)}
+    catch(e){er.textContent=errMsg(e);er.hidden=false;bt.disabled=false;bt.textContent='Buscar'}}}
+/* fotos */
+async function fotosSheet(o){openSheet(`<div class="stack">${hdrSheet(esc(o.id),true)}<h2>Fotos de tu servicio</h2><div id="fs-body" class="muted">Cargando fotos…</div></div>`);
+  $('#sheet-panel [data-back]').onclick=()=>renderClientOrder(o);
+  try{const r=await fetch(NUBE.url+'/functions/v1/notificar',{method:'POST',headers:{'Content-Type':'application/json',apikey:NUBE.key},body:JSON.stringify({tipo:'fotos_cliente',folio:o.id,tel:o.phone})});
+    const j=await r.json().catch(()=>({}));const L=(j.fotos||[]).filter(x=>x&&/^https:\/\//.test(x.url));const box=$('#fs-body');if(!box)return;
+    const T={antes:'Antes',despues:'Después',horometro:'Horómetro'};
+    box.className='';box.innerHTML=L.length?`<div class="fotos-g">${L.map(x=>`<a href="${esc(x.url)}" target="_blank" rel="noopener"><img src="${esc(x.url)}" alt="${esc(T[x.tipo]||'Foto')}" loading="lazy"><span>${esc(T[x.tipo]||'Foto')}</span></a>`).join('')}</div><p class="muted small" style="margin-top:8px">Toca una foto para verla grande.</p>`:'<p class="muted">Todavía no hay fotos de este servicio.</p>'}
+  catch(e){const box=$('#fs-body');if(box)box.textContent='Sin señal. Intenta otra vez en un rato.'}}
+function pedirOtraVez(o){
+  const md=misDatos||{};
+  draft=Object.assign(blankDraft(),{name:md.name||o.name||'',phone:md.phone||o.phone||'',machine:o.machine,hp:o.hp||'m',brand:o.brand||'jd',model:o.model||'',services:(o.services||[]).filter(id=>allowed(id,o.machine,o)),muni:o.muni||md.muni||'',place:o.place||md.place||'',gps:okGps(o.gps)?o.gps:(md.gps||''),week:o.week||''});
+  if(!draft.services.some(x=>x!=='revision'))draft.services=[];
+  saveDraft();lastFolio=null;step=draft.services.length?2:1;closeSheet();if(location.hash==='#pedir')route();else location.hash='pedir';toast('Elige el día de tu servicio')}
 function renderMaquinas(){
   renderMisDatos();
   const list=$('#mq-list');
   list.innerHTML=maquinas.length?maquinas.map((m,ix)=>{
-    const mm=mach(m.machine),z=sizeOf(m),di=dueInfo(m,m.updated),hh=hasHours(m.machine);
+    const mm=mach(m.machine),z=sizeOf(m),di=dueInfo(m,m.updated),hb=hasHours(m.machine),hh=hb&&di.iv!=null;
     const days=Math.round((di.date-Date.now())/864e5),lim=hh?Math.min(25,(di.iv||100)*0.1):0;
     const ya=hh?di.rest<=lim:days<=7,st=ya?'pendiente':days<=21?'camino':'terminada';
     const hist=(m.history||[]).slice(0,5);
@@ -1103,8 +1281,8 @@ function renderMaquinas(){
      <p>${hh?`Horómetro: <b style="font-variant-numeric:tabular-nums">${Number(m.hours).toLocaleString('es-MX')} h</b><br>Siguiente: <b>servicio de ${di.iv.toLocaleString('es-MX')} h</b> (a las ${di.at.toLocaleString('es-MX')} h)<br>`:''}Fecha aprox.: <b>${di.date.toLocaleDateString('es-MX',{day:'numeric',month:'long'})}</b>${di.est?' <span class="muted small">(sugerida)</span>':''}</p>
      <div class="flow"><button class="btn primary sm" type="button" data-mq-q="${ix}" data-go="${ya?'pedir':'cotizar'}">${ya?'Pedir este servicio':'Cotizar servicio'}</button><button class="btn ghost sm" type="button" data-mq-r="${ix}">Recordatorio</button></div>
      ${hist.length?`<details><summary style="cursor:pointer;font-weight:700">Historial (${(m.history||[]).length})</summary><div class="stack" style="gap:6px;margin-top:8px">${hist.map(h=>`<div class="small" style="display:flex;justify-content:space-between;gap:8px;border-top:1px solid var(--line);padding-top:6px"><span>${esc(fmtDate(h.date))}${h.interval?' · servicio '+h.interval+' h':''}<br><span class="muted">${(h.services||[]).filter(id=>id!=='revision').map(id=>esc((svc(id)||{n:id}).n)).join(', ')}</span></span><span style="font-variant-numeric:tabular-nums">${h.total?money(h.total):''}</span></div>`).join('')}</div></details>`:''}
-     <button class="btn ghost sm" type="button" data-mq-u="${ix}">${hh?'Actualizar horas':'Opciones'}</button>
-     <div data-mq-box="${ix}" hidden class="stack" style="gap:8px">${hh?`<div style="display:flex;gap:8px"><input type="number" inputmode="numeric" id="mq-h-${ix}" value="${esc(m.hours)}" style="flex:1;min-width:0" aria-label="Horómetro"><button class="btn green sm" type="button" data-mq-s="${ix}">Guardar</button></div>
+     ${hb&&!hh?'<p class="small muted">Escribe las horas del horómetro para calcular su siguiente servicio.</p>':''}<button class="btn ghost sm" type="button" data-mq-u="${ix}">${hb?(hh?'Actualizar horas':'Agregar horas'):'Opciones'}</button>
+     <div data-mq-box="${ix}" hidden class="stack" style="gap:8px">${hb?`<div style="display:flex;gap:8px"><input type="number" inputmode="numeric" id="mq-h-${ix}" value="${esc(m.hours)}" style="flex:1;min-width:0" aria-label="Horómetro"><button class="btn green sm" type="button" data-mq-s="${ix}">Guardar</button></div>
       <div style="display:flex;gap:8px"><input type="number" inputmode="numeric" id="mq-w-${ix}" value="${esc(m.week||'')}" placeholder="Horas por semana" style="flex:1;min-width:0" aria-label="Horas por semana"></div>`:''}
       <button class="btn ghost sm" type="button" data-mq-d="${ix}" style="color:var(--danger)">Borrar esta máquina</button></div></div>`}).join('')
     :`<div class="empty">Todavía no registras máquinas. Agrega la primera abajo.</div>`;
@@ -1139,6 +1317,7 @@ function renderMqForm(){
 /* ---------- navegación ---------- */
 let view='inicio';
 function route(){
+  const pm=(location.hash||'').match(/^#pedido=([A-Za-z0-9-]{4,40})$/);if(pm&&!TEAM){history.replaceState(null,'',location.pathname+location.search+'#inicio');setTimeout(()=>{syncPedidos();openOrder(pm[1])},250)}
   const v=(location.hash||'#').slice(1),L=TEAM?['tecnico','pedir','cotizar','ajustes']:['inicio','pedir','cotizar','maquinas'];view=L.includes(v)?v:L[0];
   document.querySelectorAll('main>section').forEach(s=>s.hidden=s.id!=='v-'+view);
   document.querySelectorAll('nav.tabs a').forEach(a=>{if(a.dataset.v===view)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
