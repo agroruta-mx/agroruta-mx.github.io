@@ -1675,7 +1675,8 @@ const ARW='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-wid
 function flechaVer(){const b=$('#backb');if(!b)return;const on=view==='pedir'&&!lastFolio&&!pedirAviso&&step>0;if(b.hidden===!on)return;b.hidden=!on;if(typeof tituloVista==='function')tituloVista()}
 /* deslizar desde la orilla (app instalada) */
 const esInst=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
-const swipeOk=()=>window.__swipe===true||esInst();
+const esIPh=()=>/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const swipeOk=()=>window.__swipe===true||(esInst()&&!esIPh());
 function destinoAtras(){if($('#alerta'))return null;if(!$('#sheet').hidden)return hojaPadres.length?'sub':'hoja';const b=$('#backb');return b&&!b.hidden?'paso':null}
 function swIni(S){const W=innerWidth;S.W=W;
   if(S.k==='paso'){const cur=step,y=scrollY;step=cur-1;renderPedir0();const c=document.querySelector('.app').cloneNode(true);step=cur;renderPedir0();scrollTo(0,y);
