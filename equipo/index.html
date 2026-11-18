@@ -1478,7 +1478,7 @@ async function renderCuenta(){
    <div class="stack" style="gap:8px"><b>Notificaciones</b><p class="small">${NOTIF_TXT[st]||NOTIF_TXT.no}</p>
     ${st==='apagado'?`<button class="btn green block" type="button" id="cu-on">Activar notificaciones</button>`:''}
     ${st==='activo'?`<div class="flow"><button class="btn ghost sm" type="button" id="cu-test">Mandar prueba</button><button class="btn ghost sm" type="button" id="cu-off">Apagar aquí</button></div>`:''}</div>
-   <div class="stack" style="gap:8px;border-top:1px solid var(--line);padding-top:12px"><span class="small">Sesión: <b>${esc(AR.email())}</b></span><span class="muted small">Versión 1118-1400</span><button class="btn ghost sm" type="button" id="cu-out">Cerrar sesión</button></div>`;
+   <div class="stack" style="gap:8px;border-top:1px solid var(--line);padding-top:12px"><span class="small">Sesión: <b>${esc(AR.email())}</b></span><span class="muted small">Versión 1118-1500</span><button class="btn ghost sm" type="button" id="cu-out">Cerrar sesión</button></div>`;
   const on=$('#cu-on');if(on)on.onclick=async()=>{on.disabled=true;on.textContent='Activando… (si sale un aviso, dale Permitir)';let msg='';
     try{await AR.push.activar();toast('Notificaciones activadas');AR.push.prueba().catch(()=>{})}
     catch(e){const m=e&&e.message||'';msg=m==='permiso'?'No se dio permiso. En la Mac: Ajustes del Sistema → Notificaciones → AgroRuta Equipo → Permitir. En iPhone: Ajustes → Notificaciones → AR Equipo.':m==='permiso-tiempo'?'No contestaste el aviso de permiso. Búscalo arriba a la derecha de la pantalla o revisa Ajustes del Sistema → Notificaciones.':m==='suscribir'?'El navegador no respondió al registrar el aparato. Cierra la app, ábrela otra vez e intenta de nuevo.':m==='guardar'?'No se pudo guardar en la nube. Revisa tu señal e intenta otra vez.':'No se pudieron activar: '+m}
@@ -1794,6 +1794,8 @@ function aplicaEstado(){const s=hs(),abierta=!$('#sheet').hidden;let d=abierta?1
       if(n!==step||renderPedir.k==='L'){step=n;renderPedir();scrollTo(0,0)}else flechaVer();if(n!==s.st)hRep({st:n})}
   }finally{H.pop=false;H.quieto=false}}
 addEventListener('popstate',()=>{
+  if(!H.busy&&typeof SW!=='undefined'){if(SW.S||SW.anim)SW.ext=true;
+    else if(SW.guard&&Date.now()-SW.guard<1000){SW.guard=0;H.busy=true;H.ap=true;clearTimeout(H.t);H.t=setTimeout(hLibera,900);history.go(1);return}}
   if(H.busy){clearTimeout(H.t);const ap=H.ap;H.busy=false;if(ap)aplicaEstado();const q=H.q.splice(0);q.forEach(f=>{try{f()}catch(e){console.error(e)}});return}
   aplicaEstado()});
 /* pasos del pedido */
@@ -1833,18 +1835,18 @@ function swLimpia(S){if(typeof SW!=='undefined')SW.anim=false;if(S.prev)S.prev.r
 function swFin(S,ok){const T=ok?260:380,ez=ok?'cubic-bezier(.2,.8,.2,1)':'cubic-bezier(.22,1.25,.36,1)';
   [S.el,S.prev].forEach(e=>{if(e)e.style.transition=`transform ${T}ms ${ez}`});if(S.dim)S.dim.style.transition=`opacity ${T}ms ease`;if(S.k==='hoja')$('#sheet').style.transition=`background ${T}ms ease`;
   swPose(S,ok?1:0);
-  setTimeout(()=>{try{$('#sheet').style.transition='';if(!ok){swLimpia(S);return}
+  setTimeout(()=>{try{$('#sheet').style.transition='';if(!ok||SW.ext){SW.ext=false;swLimpia(S);swBarre();return}SW.guard=Date.now();
     if(S.k==='hoja'){H.sinFantasma=true;try{closeSheet()}finally{H.sinFantasma=false}swLimpia(S);return}
     if(S.k==='sub'){atrasHoja();const t0=Date.now(),esp=()=>{if(hojaPadres.length<S.n||Date.now()-t0>700)requestAnimationFrame(()=>swLimpia(S));else setTimeout(esp,16)};esp();return}
     const was=step;pasoAtras();const t0=Date.now(),esp=()=>{if(step!==was||Date.now()-t0>700)requestAnimationFrame(()=>swLimpia(S));else setTimeout(esp,16)};esp()}catch(err){console.error(err);swLimpia(S);swBarre()}},T);setTimeout(()=>{if(SW.anim){SW.anim=false;swBarre()}},T+1500)}
 function swBarre(){document.querySelectorAll('.swprev,.swdim,.swsnap').forEach(x=>x.remove());const a=document.querySelector('.app'),p=$('#sheet-panel');
   [a,p].forEach(e=>{if(!e)return;e.classList.remove('swp','swtop');e.style.transition='';e.style.transform='';e.style.animation=''});const sh=$('#sheet');if(sh){sh.style.background='';sh.style.transition=''}}
-const SW={S:null,anim:false,tg:null};
+const SW={S:null,anim:false,tg:null,ext:false,guard:0};
 (()=>{const EDGE=26;
   const suelta=()=>{const t=SW.tg;SW.tg=null;if(!t)return;t.removeEventListener('touchmove',mv,{passive:false});t.removeEventListener('touchend',fin);t.removeEventListener('touchcancel',fin)};
   function ini(e){if(e.__arsw)return;e.__arsw=1;
     if(SW.S){const X=SW.S;SW.S=null;suelta();if(X.on){swLimpia(X);swBarre()}}
-    if(SW.anim||!swipeOk()||e.touches.length!==1)return;const t=e.touches[0];if(t.clientX>EDGE)return;const k=destinoAtras();if(!k)return;
+    SW.ext=false;if(SW.anim||!swipeOk()||e.touches.length!==1)return;const t=e.touches[0];if(t.clientX>EDGE)return;const k=destinoAtras();if(!k)return;
     if(document.querySelector('.swprev,.swdim,.swsnap'))swBarre();
     SW.S={x:t.clientX,y:t.clientY,t:Date.now(),k,on:false,dx:0,n:hojaPadres.length,pts:[]};
     const tg=e.target;if(tg&&tg.addEventListener){SW.tg=tg;tg.addEventListener('touchmove',mv,{passive:false});tg.addEventListener('touchend',fin);tg.addEventListener('touchcancel',fin)}}
@@ -1853,7 +1855,7 @@ const SW={S:null,anim:false,tg:null};
     if(e.cancelable)e.preventDefault();e.stopPropagation();S.dx=Math.max(0,dx);const nw=Date.now();S.pts.push([S.dx,nw]);while(S.pts.length>2&&nw-S.pts[0][1]>120)S.pts.shift();swPose(S,S.dx/S.W)}
   function fin(e){if(e&&e.__arsw)return;if(e)e.__arsw=1;const X=SW.S;if(!X)return;if(e&&e.touches&&e.touches.length)return;SW.S=null;suelta();if(!X.on)return;if(e)e.stopPropagation();
     const p0=X.pts[0]||[0,X.t],v=(X.dx-p0[0])/Math.max(16,Date.now()-p0[1]),k=X.dx/X.W;SW.anim=true;
-    try{swFin(X,k>.42||(v>.35&&k>.08))}catch(err){SW.anim=false;swBarre();console.error(err)}}
+    try{swFin(X,e&&e.type!=='touchcancel'&&(k>.42||(v>.35&&k>.08)))}catch(err){SW.anim=false;swBarre();console.error(err)}}
   addEventListener('touchstart',ini,{passive:true,capture:true});addEventListener('touchmove',mv,{passive:false,capture:true});
   addEventListener('touchend',fin,true);addEventListener('touchcancel',fin,true);
   addEventListener('hashchange',()=>{if(SW.S||document.querySelector('.swprev,.swdim,.swsnap')){SW.S=null;suelta();if(!SW.anim)swBarre()}},true)})();
