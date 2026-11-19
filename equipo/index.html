@@ -266,29 +266,6 @@ nav.tabs::after{content:"";position:absolute;left:0;right:0;top:100%;height:120p
 </style>
 </head>
 <body>
-<style>#splash{display:none}
-#splash,#splash *{box-sizing:border-box;margin:0;padding:0;text-transform:none;text-align:center;-webkit-text-size-adjust:100%}
-.splash #splash{display:block;position:fixed;left:0;top:0;width:100%;height:100%;z-index:2147483000;background:#0A0A0A;pointer-events:none;transition:opacity .4s ease}
-#splash .sp-c{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:18px}
-#splash .sp-ar{position:relative;display:grid;place-items:center;width:96px;height:96px;border-radius:28px;font:800 40px/1 "Archivo","Arial Narrow",system-ui,sans-serif;font-stretch:80%;letter-spacing:.01em;color:#1E1A0E;
- background:linear-gradient(160deg,#F7CB6A 0%,#F0B33A 45%,#D8971F 100%);
- box-shadow:0 0 0 1px rgba(255,255,255,.18) inset,0 1px 0 rgba(255,255,255,.55) inset,0 10px 40px rgba(240,179,58,.35),0 2px 10px rgba(0,0,0,.6);transition:transform .4s ease}
-#splash .sp-ar:after{content:"";position:absolute;inset:2px 2px 50% 2px;border-radius:26px 26px 40% 40%/26px 26px 14px 14px;background:linear-gradient(180deg,rgba(255,255,255,.35),rgba(255,255,255,0))}
-#splash .sp-ar:before{content:"";position:absolute;inset:-30px;border-radius:50%;background:radial-gradient(circle,rgba(240,179,58,.22),rgba(240,179,58,0) 70%);opacity:0;animation:spg 1.8s ease-in-out .3s infinite}
-#splash .sp-eq{display:inline-block;padding:5px 12px;border-radius:99px;border:1px solid rgba(255,255,255,.14);background:rgba(127,196,138,.12);color:#7FC48A;font:700 13px/1 "Atkinson Hyperlegible",system-ui,sans-serif;letter-spacing:.06em}
-#splash .sp-f{position:absolute;left:0;right:0;bottom:56px;height:42px;text-align:center}
-#splash .sp-f small{display:block;height:16px;color:#7d8576;font:400 13px/16px "Atkinson Hyperlegible",system-ui,sans-serif;margin-bottom:4px}
-#splash .sp-f b{display:block;height:22px;font:800 21px/22px "Archivo","Arial Narrow",system-ui,sans-serif;font-stretch:80%;letter-spacing:.02em;color:#EEF2E8}
-#splash .sp-f b em{font-style:normal;color:#F0B33A}
-#splash.out{opacity:0}
-#splash.out .sp-ar{transform:scale(1.06)}
-@keyframes spg{50%{opacity:1}}
-@media (prefers-reduced-motion:reduce){#splash .sp-ar:before{animation:none}#splash .sp-ar{transition:none}}
-</style>
-<script>(function(){var d=document.documentElement,i=false;try{i=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){}if(!i)return;d.classList.add('splash');
-setTimeout(function(){var x=document.getElementById('splash');if(x)x.remove();d.classList.remove('splash')},6000)})();</script>
-<div id="splash" aria-hidden="true"><div class="sp-c"><div class="sp-ar">AR</div><span class="sp-eq">EQUIPO</span></div><div class="sp-f"><small>from</small><b>AgroRuta <em>Móvil</em></b></div></div>
-
 <div class="app">
   <header class="top wrap">
     <div class="row">
@@ -1514,7 +1491,7 @@ async function renderCuenta(){
    <div class="stack" style="gap:8px"><b>Notificaciones</b><p class="small">${NOTIF_TXT[st]||NOTIF_TXT.no}</p>
     ${st==='apagado'?`<button class="btn green block" type="button" id="cu-on">Activar notificaciones</button>`:''}
     ${st==='activo'?`<div class="flow"><button class="btn ghost sm" type="button" id="cu-test">Mandar prueba</button><button class="btn ghost sm" type="button" id="cu-off">Apagar aquí</button></div>`:''}</div>
-   <div class="stack" style="gap:8px;border-top:1px solid var(--line);padding-top:12px"><span class="small">Sesión: <b>${esc(AR.email())}</b></span><span class="muted small">Versión 1119-1300</span><button class="btn ghost sm" type="button" id="cu-out">Cerrar sesión</button></div>`;
+   <div class="stack" style="gap:8px;border-top:1px solid var(--line);padding-top:12px"><span class="small">Sesión: <b>${esc(AR.email())}</b></span><span class="muted small">Versión 1119-1400</span><button class="btn ghost sm" type="button" id="cu-out">Cerrar sesión</button></div>`;
   const on=$('#cu-on');if(on)on.onclick=async()=>{on.disabled=true;on.textContent='Activando… (si sale un aviso, dale Permitir)';let msg='';
     try{await AR.push.activar();toast('Notificaciones activadas');AR.push.prueba().catch(()=>{})}
     catch(e){const m=e&&e.message||'';msg=m==='permiso'?'No se dio permiso. En la Mac: Ajustes del Sistema → Notificaciones → AgroRuta Equipo → Permitir. En iPhone: Ajustes → Notificaciones → AR Equipo.':m==='permiso-tiempo'?'No contestaste el aviso de permiso. Búscalo arriba a la derecha de la pantalla o revisa Ajustes del Sistema → Notificaciones.':m==='suscribir'?'El navegador no respondió al registrar el aparato. Cierra la app, ábrela otra vez e intenta de nuevo.':m==='guardar'?'No se pudo guardar en la nube. Revisa tu señal e intenta otra vez.':'No se pudieron activar: '+m}
@@ -1814,7 +1791,7 @@ const hs=()=>(history.state&&history.state.ar)?history.state:{ar:1,st:0,sd:0,sh:
 function hDo(f){if(H.busy)H.q.push(f);else f()}
 function hPush(o){try{history.pushState(Object.assign({},hs(),o,{ar:1}),'',location.href)}catch(e){}}
 function hRep(o){try{history.replaceState(Object.assign({},hs(),o,{ar:1}),'',location.href)}catch(e){}}
-function hGo(n,ap){if(!(n>0))return false;H.busy=true;H.ap=!!ap;clearTimeout(H.t);H.t=setTimeout(hLibera,900);history.go(-n);return true}
+function hGo(n,ap){if(!(n>0))return false;{const s=hs();H.desde={d:(s.sd||0)+(s.sh||0),h:location.hash,n}}H.busy=true;H.ap=!!ap;clearTimeout(H.t);H.t=setTimeout(hLibera,900);history.go(-n);return true}
 function hLibera(){if(!H.busy)return;H.busy=false;const q=H.q.splice(0);q.forEach(f=>{try{f()}catch(e){console.error(e)}})}
 function irHash(h){hDo(()=>{if(location.hash==='#'+h)route();else location.hash=h})}
 const hojaPadres=[];
@@ -1831,9 +1808,10 @@ function aplicaEstado(){const s=hs(),abierta=!$('#sheet').hidden;let d=abierta?1
       if(n!==step||renderPedir.k==='L'){step=n;renderPedir();pasoAltura(n)}else flechaVer();if(n!==s.st)hRep({st:n})}
   }finally{H.pop=false;H.quieto=false}}
 addEventListener('popstate',()=>{
-  if(!H.busy&&typeof SW!=='undefined'){if(SW.S||SW.anim)SW.ext=true;
-    else if(SW.guard&&Date.now()-SW.guard<1000){SW.guard=0;H.busy=true;H.ap=true;clearTimeout(H.t);H.t=setTimeout(hLibera,900);history.go(1);return}}
-  if(H.busy){clearTimeout(H.t);const ap=H.ap;H.busy=false;if(ap)aplicaEstado();const q=H.q.splice(0);q.forEach(f=>{try{f()}catch(e){console.error(e)}});return}
+  if(!H.busy&&typeof SW!=='undefined'){if(SW.guard&&Date.now()-SW.guard<1000){SW.guard=0;H.busy=true;H.ap=true;clearTimeout(H.t);H.t=setTimeout(hLibera,900);history.go(1);return}
+    if(SW.S||SW.anim)SW.ext=true}
+  if(H.busy){clearTimeout(H.t);const ap=H.ap;H.busy=false;
+    {const s=hs(),D=H.desde;H.desde=null;const d=(s.sd||0)+(s.sh||0);if(D&&s.ar&&location.hash===D.h&&d<D.d-D.n){H.busy=true;H.ap=ap;H.t=setTimeout(hLibera,900);history.go(D.d-D.n-d);return}}if(ap)aplicaEstado();const q=H.q.splice(0);q.forEach(f=>{try{f()}catch(e){console.error(e)}});return}
   aplicaEstado()});
 /* pasos del pedido */
 let pedirAviso=false,pedirDirecto=false;
@@ -1900,13 +1878,8 @@ const SW={S:null,anim:false,tg:null,ext:false,guard:0};
   addEventListener('touchstart',ini,{passive:true,capture:true});addEventListener('touchmove',mv,{passive:false,capture:true});
   addEventListener('touchend',fin,true);addEventListener('touchcancel',fin,true);
   addEventListener('hashchange',()=>{if(SW.S||document.querySelector('.swprev,.swdim,.swsnap')){SW.S=null;suelta();if(!SW.anim)swBarre()}},true)})();
-function splashFin(){const s=document.getElementById('splash'),d=document.documentElement;if(!s)return;if(!d.classList.contains('splash')){s.remove();return}
-  const go=()=>{s.classList.add('out');setTimeout(()=>{s.remove();d.classList.remove('splash')},450)};
-  const fr=(document.fonts&&document.fonts.ready)?Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,800))]):Promise.resolve();
-  fr.then(()=>setTimeout(go,Math.max(0,500-performance.now())))}
 route();
 initData();
-splashFin();
 if(!TEAM){try{const sp=new URLSearchParams(location.search).get('s');if(sp){const x=decodeService(sp);history.replaceState(null,'',location.pathname+location.hash);if(x)setTimeout(()=>recordServiceSheet(x,true),300)}}catch(e){}}
 </script>
 </body>
