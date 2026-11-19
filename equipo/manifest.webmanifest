@@ -7,7 +7,7 @@
   "start_url": "./#tecnico",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#1E2419",
+  "background_color": "#0A0A0A",
   "theme_color": "#1E2419",
   "icons": [
     {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png"},

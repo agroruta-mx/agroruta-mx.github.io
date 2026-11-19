@@ -11,11 +11,48 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="AgroRuta">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="icons/splash/640x1136.png">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="icons/splash/750x1334.png">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="icons/splash/1242x2208.png">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="icons/splash/1125x2436.png">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="icons/splash/828x1792.png">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="icons/splash/1242x2688.png">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="icons/splash/1170x2532.png">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="icons/splash/1284x2778.png">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="icons/splash/1179x2556.png">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="icons/splash/1290x2796.png">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="icons/splash/1206x2622.png">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="icons/splash/1320x2868.png">
+<link rel="apple-touch-startup-image" media="screen and (device-width: 420px) and (device-height: 912px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="icons/splash/1260x2736.png">
 <style>:root{color-scheme:dark;background:#0B0F0A;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px/1.4 system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>AgroRuta Móvil</title>
 </head>
 <body>
 <meta name="claude:viewport-fit-sides" content="cover">
+<style>#splash{display:none}
+#splash,#splash *{box-sizing:border-box;margin:0;padding:0;text-transform:none;text-align:center;-webkit-text-size-adjust:100%}
+.splash #splash{display:block;position:fixed;left:0;top:0;width:100%;height:100%;z-index:2147483000;background:#0A0A0A;pointer-events:none;transition:opacity .4s ease}
+#splash .sp-c{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:18px}
+#splash .sp-ar{position:relative;display:grid;place-items:center;width:96px;height:96px;border-radius:28px;font:800 40px/1 "Archivo","Arial Narrow",system-ui,sans-serif;font-stretch:80%;letter-spacing:.01em;color:#1E1A0E;
+ background:linear-gradient(160deg,#F7CB6A 0%,#F0B33A 45%,#D8971F 100%);
+ box-shadow:0 0 0 1px rgba(255,255,255,.18) inset,0 1px 0 rgba(255,255,255,.55) inset,0 10px 40px rgba(240,179,58,.35),0 2px 10px rgba(0,0,0,.6);transition:transform .4s ease}
+#splash .sp-ar:after{content:"";position:absolute;inset:2px 2px 50% 2px;border-radius:26px 26px 40% 40%/26px 26px 14px 14px;background:linear-gradient(180deg,rgba(255,255,255,.35),rgba(255,255,255,0))}
+#splash .sp-ar:before{content:"";position:absolute;inset:-30px;border-radius:50%;background:radial-gradient(circle,rgba(240,179,58,.22),rgba(240,179,58,0) 70%);opacity:0;animation:spg 1.8s ease-in-out .3s infinite}
+#splash .sp-eq{display:inline-block;padding:5px 12px;border-radius:99px;border:1px solid rgba(255,255,255,.14);background:rgba(127,196,138,.12);color:#7FC48A;font:700 13px/1 "Atkinson Hyperlegible",system-ui,sans-serif;letter-spacing:.06em}
+#splash .sp-f{position:absolute;left:0;right:0;bottom:56px;height:42px;text-align:center}
+#splash .sp-f small{display:block;height:16px;color:#7d8576;font:400 13px/16px "Atkinson Hyperlegible",system-ui,sans-serif;margin-bottom:4px}
+#splash .sp-f b{display:block;height:22px;font:800 21px/22px "Archivo","Arial Narrow",system-ui,sans-serif;font-stretch:80%;letter-spacing:.02em;color:#EEF2E8}
+#splash .sp-f b em{font-style:normal;color:#F0B33A}
+#splash.out{opacity:0}
+#splash.out .sp-ar{transform:scale(1.06)}
+@keyframes spg{50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){#splash .sp-ar:before{animation:none}#splash .sp-ar{transition:none}}
+</style>
+<script>(function(){var d=document.documentElement,i=false;try{i=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){}if(!i)return;d.classList.add('splash');
+setTimeout(function(){var x=document.getElementById('splash');if(x)x.remove();d.classList.remove('splash')},6000)})();</script>
+<div id="splash" aria-hidden="true"><div class="sp-c"><div class="sp-ar">AR</div></div><div class="sp-f"><small>from</small><b>AgroRuta <em>Móvil</em></b></div></div>
+<script>(function(){var s=document.getElementById('splash');if(!document.documentElement.classList.contains('splash'))return;try{var H=screen.height,ih=innerHeight;if(/iPhone|iPod/.test(navigator.userAgent)&&screen.width<H&&ih<H&&H-ih<80){s.style.top=(ih-H)+'px';s.style.height=H+'px'}}catch(e){}})();</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,600..800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
 <style>
@@ -1563,7 +1600,7 @@ function route(){
   const v=(location.hash||'#').slice(1),L=TEAM?['tecnico','pedir','cotizar','ajustes']:['inicio','pedir','cotizar','maquinas'];view=L.includes(v)?v:L[0];
   document.querySelectorAll('main>section').forEach(s=>s.hidden=s.id!=='v-'+view);
   document.querySelectorAll('nav.tabs a').forEach(a=>{if(a.dataset.v===view)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
-  if(view==='pedir'){const st=history.state;if(st&&st.ar&&st.st!=null&&!pedirDirecto&&!lastFolio)step=st.st;
+  if(view==='pedir'){if(pedirDirecto)pasoYLimpia();const st=history.state;if(st&&st.ar&&st.st!=null&&!pedirDirecto&&!lastFolio)step=st.st;
     pedirAviso=(pv!==view||!route.n)&&!pedirDirecto&&!lastFolio&&enProgreso()&&!(st&&st.ar&&st.st!=null);pedirDirecto=false}
   cerrarAlerta();renderView();scrollTo(0,0);if(view==='pedir')hRep({st:step});flechaVer();
   document.documentElement.dataset.v=view;tituloVista();navMin(false);navMedir();if(pv!==view||!route.n)entrada(document.querySelector('#v-'+view));route.n=1;
@@ -1639,14 +1676,15 @@ function irHash(h){hDo(()=>{if(location.hash==='#'+h)route();else location.hash=
 const hojaPadres=[];
 function subHoja(fn){if($('#sheet').hidden)return;const p=$('#sheet-panel'),c=p.cloneNode(true);c.removeAttribute('id');c.querySelectorAll('[id]').forEach(x=>x.removeAttribute('id'));
   hojaPadres.push({fn,snap:c,y:p.scrollTop});hDo(()=>hPush({sh:(hs().sh||0)+1}))}
-function atrasHoja(){if((hs().sh||0)>1&&hGo(1,true))return;const f=hojaPadres.pop();if(f){H.quieto=true;try{f.fn()}finally{H.quieto=false}}else closeSheet()}
+function hojaAltura(y){const p=$('#sheet-panel');if(!p||!y)return;p.scrollTop=y;requestAnimationFrame(()=>{p.scrollTop=y})}
+function atrasHoja(){if((hs().sh||0)>1&&hGo(1,true))return;const f=hojaPadres.pop();if(f){H.quieto=true;try{f.fn()}finally{H.quieto=false}hojaAltura(f.y)}else closeSheet()}
 function aplicaEstado(){const s=hs(),abierta=!$('#sheet').hidden;let d=abierta?1+hojaPadres.length:0;const t=s.sh||0;
   H.pop=true;H.quieto=true;try{
-    while(d>t){if(d>1){const f=hojaPadres.pop();if(f)f.fn()}else{hojaPadres.length=0;closeSheet()}d--}
+    while(d>t){if(d>1){const f=hojaPadres.pop();if(f){f.fn();hojaAltura(f.y)}}else{hojaPadres.length=0;closeSheet()}d--}
     if(typeof cerrarAlerta==='function')cerrarAlerta();
     if(view==='pedir'&&location.hash==='#pedir'&&s.st!=null&&$('#sheet').hidden){
       if(lastFolio)lastFolio=null;pedirAviso=false;const n=pasoValido(s.st);
-      if(n!==step||renderPedir.k==='L'){step=n;renderPedir();scrollTo(0,0)}else flechaVer();if(n!==s.st)hRep({st:n})}
+      if(n!==step||renderPedir.k==='L'){step=n;renderPedir();pasoAltura(n)}else flechaVer();if(n!==s.st)hRep({st:n})}
   }finally{H.pop=false;H.quieto=false}}
 addEventListener('popstate',()=>{
   if(!H.busy&&typeof SW!=='undefined'){if(SW.S||SW.anim)SW.ext=true;
@@ -1657,8 +1695,11 @@ addEventListener('popstate',()=>{
 let pedirAviso=false,pedirDirecto=false;
 function pasoMax(){if(!draft.machine)return 0;if(!(draft.services||[]).some(x=>x!=='revision'))return 1;if(!draft.muni||!draft.date||!draft.slot)return 2;return 3}
 function pasoValido(n){return Math.max(0,Math.min(Number(n)||0,pasoMax()))}
-function irPaso(n){step=n;renderPedir();scrollTo(0,0);hDo(()=>hPush({st:n,sd:(hs().sd||0)+1,sh:0}))}
-function pasoAtras(){if(lastFolio||pedirAviso||step<=0)return;const s=hs();if((s.sd||0)>0&&s.st===step&&hGo(1,true))return;step--;renderPedir();scrollTo(0,0);hRep({st:step})}
+const pasoY={};
+function pasoYLimpia(){for(const k in pasoY)delete pasoY[k]}
+function pasoAltura(n){const y=pasoY[n]||0;scrollTo(0,y);if(y)requestAnimationFrame(()=>scrollTo(0,y))}
+function irPaso(n){pasoY[step]=scrollY;step=n;renderPedir();scrollTo(0,0);hDo(()=>hPush({st:n,sd:(hs().sd||0)+1,sh:0}))}
+function pasoAtras(){if(lastFolio||pedirAviso||step<=0)return;const s=hs();if((s.sd||0)>0&&s.st===step&&hGo(1,true))return;step--;renderPedir();pasoAltura(step);hRep({st:step})}
 const pasoKey=TEAM?'eq_step':'ar_step';
 function pasoGuardado(){try{return Number(localStorage.getItem(pasoKey))||0}catch(e){return 0}}
 function guardaPaso(){try{localStorage.setItem(pasoKey,String(step))}catch(e){}}
@@ -1668,8 +1709,8 @@ function avisoPedirHTML(){const m=mach(draft.machine),ns=(draft.services||[]).fi
    <button class="btn primary block" type="button" id="pa-seguir">Continuar ${TEAM?'la orden':'tu pedido'}</button>
    <button class="btn ghost block" type="button" id="pa-nuevo">Empezar de nuevo</button></div>`}
 function bindAvisoPedir(){const a=$('#pa-seguir');if(!a)return;
-  a.onclick=()=>{pedirAviso=false;step=pasoValido(Math.max(pasoGuardado(),step));renderPedir();scrollTo(0,0);hRep({st:step,sd:0})};
-  $('#pa-nuevo').onclick=()=>{pedirAviso=false;draft=Object.assign(blankDraft(),TEAM?{}:(misDatos||{}));saveDraft();step=0;renderPedir();scrollTo(0,0);hRep({st:0,sd:0})}}
+  a.onclick=()=>{pedirAviso=false;pasoYLimpia();step=pasoValido(Math.max(pasoGuardado(),step));renderPedir();scrollTo(0,0);hRep({st:step,sd:0})};
+  $('#pa-nuevo').onclick=()=>{pedirAviso=false;pasoYLimpia();draft=Object.assign(blankDraft(),TEAM?{}:(misDatos||{}));saveDraft();step=0;renderPedir();scrollTo(0,0);hRep({st:0,sd:0})}}
 /* flechita de regresar */
 const ARW='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
 function flechaVer(){const b=$('#backb');if(!b)return;const on=view==='pedir'&&!lastFolio&&!pedirAviso&&step>0;if(b.hidden===!on)return;b.hidden=!on;if(typeof tituloVista==='function')tituloVista()}
@@ -1680,7 +1721,7 @@ const swipeOk=()=>window.__swipe===true||(esInst()&&!esIPh());
 function destinoAtras(){if($('#alerta'))return null;if(!$('#sheet').hidden)return hojaPadres.length?'sub':'hoja';const b=$('#backb');return b&&!b.hidden?'paso':null}
 function swIni(S){const W=innerWidth;S.W=W;
   if(S.k==='paso'){const cur=step,y=scrollY;step=cur-1;renderPedir0();const c=document.querySelector('.app').cloneNode(true);step=cur;renderPedir0();scrollTo(0,y);
-    const box=document.createElement('div');box.className='swprev';c.style.cssText='position:absolute;left:0;right:0;top:0;margin:0 auto';box.appendChild(c);document.body.appendChild(box);
+    const box=document.createElement('div');box.className='swprev';const py=pasoY[cur-1]||0;c.style.cssText=`position:absolute;left:0;right:0;top:${-py}px;margin:0 auto`;const ch=c.querySelector('header.top');if(ch&&py)ch.style.cssText+=`;position:relative;top:${py}px;z-index:3`;box.appendChild(c);document.body.appendChild(box);
     const dim=document.createElement('div');dim.className='swdim';document.body.appendChild(dim);S.prev=box;S.dim=dim;S.el=document.querySelector('.app');S.el.classList.add('swp')}
   else{const sh=$('#sheet'),p=$('#sheet-panel');S.el=p;p.style.animation='none';p.style.transition='none';
     if(S.k==='sub'){const f=hojaPadres[hojaPadres.length-1],c=f.snap.cloneNode(true);c.classList.add('swsnap');sh.appendChild(c);c.scrollTop=f.y;S.prev=c;p.classList.add('swtop')}}
@@ -1694,7 +1735,7 @@ function swFin(S,ok){const T=ok?260:380,ez=ok?'cubic-bezier(.2,.8,.2,1)':'cubic-
   setTimeout(()=>{try{$('#sheet').style.transition='';if(!ok||SW.ext){SW.ext=false;swLimpia(S);swBarre();return}SW.guard=Date.now();
     if(S.k==='hoja'){H.sinFantasma=true;try{closeSheet()}finally{H.sinFantasma=false}swLimpia(S);return}
     if(S.k==='sub'){atrasHoja();const t0=Date.now(),esp=()=>{if(hojaPadres.length<S.n||Date.now()-t0>700)requestAnimationFrame(()=>swLimpia(S));else setTimeout(esp,16)};esp();return}
-    const was=step;pasoAtras();const t0=Date.now(),esp=()=>{if(step!==was||Date.now()-t0>700)requestAnimationFrame(()=>swLimpia(S));else setTimeout(esp,16)};esp()}catch(err){console.error(err);swLimpia(S);swBarre()}},T);setTimeout(()=>{if(SW.anim){SW.anim=false;swBarre()}},T+1500)}
+    const was=step;pasoAtras();const t0=Date.now(),esp=()=>{if(step!==was||Date.now()-t0>700)requestAnimationFrame(()=>{swLimpia(S);if(step!==was)pasoAltura(step)});else setTimeout(esp,16)};esp()}catch(err){console.error(err);swLimpia(S);swBarre()}},T);setTimeout(()=>{if(SW.anim){SW.anim=false;swBarre()}},T+1500)}
 function swBarre(){document.querySelectorAll('.swprev,.swdim,.swsnap').forEach(x=>x.remove());const a=document.querySelector('.app'),p=$('#sheet-panel');
   [a,p].forEach(e=>{if(!e)return;e.classList.remove('swp','swtop');e.style.transition='';e.style.transform='';e.style.animation=''});const sh=$('#sheet');if(sh){sh.style.background='';sh.style.transition=''}}
 const SW={S:null,anim:false,tg:null,ext:false,guard:0};
@@ -1715,8 +1756,13 @@ const SW={S:null,anim:false,tg:null,ext:false,guard:0};
   addEventListener('touchstart',ini,{passive:true,capture:true});addEventListener('touchmove',mv,{passive:false,capture:true});
   addEventListener('touchend',fin,true);addEventListener('touchcancel',fin,true);
   addEventListener('hashchange',()=>{if(SW.S||document.querySelector('.swprev,.swdim,.swsnap')){SW.S=null;suelta();if(!SW.anim)swBarre()}},true)})();
+function splashFin(){const s=document.getElementById('splash'),d=document.documentElement;if(!s)return;if(!d.classList.contains('splash')){s.remove();return}
+  const go=()=>{s.classList.add('out');setTimeout(()=>{s.remove();d.classList.remove('splash')},450)};
+  const fr=(document.fonts&&document.fonts.ready)?Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,800))]):Promise.resolve();
+  fr.then(()=>setTimeout(go,Math.max(0,500-performance.now())))}
 route();
 initData();
+splashFin();
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{navMedir();tituloVista()});addEventListener('load',()=>{navMedir();tituloVista()});
 if(!TEAM){try{const sp=new URLSearchParams(location.search).get('s');if(sp){const x=decodeService(sp);history.replaceState(null,'',location.pathname+location.hash);if(x)setTimeout(()=>recordServiceSheet(x,true),300)}}catch(e){}}
 </script>
